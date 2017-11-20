@@ -4,7 +4,7 @@ rm(list=ls(all=TRUE))  #Clear the variables from previous runs.
  
 # ---- load-sources ------------------------------------------------------------
 # Call `base::source()` on any repo file that defines functions needed below.  Ideally, no real operations are performed.
-source("./scripts/function-common.R") # used in multiple reports
+source("./scripts/functions-common.R") # used in multiple reports
 # source("./scripts/graph-presets.R") # fonts, colors, themes 
 # source("./scripts/general-graphs.R")
 # source("./scripts/specific-graphs.R")
@@ -45,6 +45,9 @@ ds <- dto[["unitData"]]
 ds <- ds %>% 
   dplyr::mutate(
     wave = fu_year # the function to examine temporal structure depend on dataset to have a variable "wave"
+  ) %>% 
+  dplyr::rename(
+    physact = phys5itemsum
   )
 
 
@@ -142,6 +145,27 @@ ds <- ds %>%
 ds %>% view_temporal_pattern("grip_med", 2)
 ds %>% view_temporal_pattern("grip", 2)
 
+# ---- force-to-static-physact ---------------------------
+ds %>% view_temporal_pattern("physact", 2) # with seed
+ds %>% temporal_pattern("physact") # random every time
+ds %>% over_waves("physact"); # 2, 4, 6
+# check that values are the same across waves
+ds %>%
+  dplyr::group_by(id) %>%
+  dplyr::summarize(unique = length(unique(physact))) %>%
+  dplyr::arrange(desc(unique)) # unique > 1 indicates change over wave
+# grab the value for the first wave and forces it to all waves
+ds <- ds %>%
+  dplyr::group_by(id) %>%
+  # compute median height across lifespan
+  dplyr::mutate(
+    physact_bl    = dplyr::first(physact),    # 
+    physact_med   = median(physact, na.rm =T) # computes the median height across lifespan
+  ) %>%
+  dplyr::ungroup()
+# examine the difference
+ds %>% view_temporal_pattern("physact_med", 2)
+ds %>% view_temporal_pattern("physact", 2)
 
 
 
@@ -174,6 +198,7 @@ ds_long <- ds %>%
     ,"birth_year"      # year of birth 
     ,"htm_med"         # height in meters, median across observed across lifespan
     ,"bmi_med"         # Body Mass Index, median across observed across lifespan
+    ,"physact_med"     # Physical activity, median across observed across lifespan
 # time-invariant above
     ,"fu_year" # Follow-up year --- --- --- --- --- --- --- --- --- ---
 # time-variant below
@@ -186,6 +211,7 @@ ds_long <- ds %>%
     ,"grip"             # Extremity strengtg in pounds (lbs)
     ,"htm"              # height in meters
     ,"bmi"              # Body Mass Index  in kilograms per meter squared (kg/msq)
+    ,"physact"          # Physical activity (sum of 5 items)
     )
 )
 # save to disk for direct examination
