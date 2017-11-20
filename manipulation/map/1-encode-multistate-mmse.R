@@ -22,6 +22,10 @@ requireNamespace("testit", quietly=TRUE)
 path_input <- "./data/unshared/derived/0-dto.rds"
 path_output <- "./data/unshared/derived/1-dto.rds"
 
+options(
+  origin="1970-01-01"
+)
+
 # ---- load-data ---------------------------------------------------------------
 # load the product of 0-ellis-island.R,  a list object containing data and metad
 dto <- readRDS(path_input)
@@ -57,28 +61,33 @@ ds_long <- ds %>%
     male      = as.logical(ifelse(!is.na(msex), msex=="1", NA_integer_)),
     edu       = as.numeric(educ)
   ) %>% 
-  dplyr::select_(
+  dplyr::select_(.dots = c(
      "id"              # personal identifier
     ,"male"            # gender
     ,"edu"             # years of education
     ,"age_bl"          # age at baseline
-    ,"age_at_death"       # age at death
+    ,"age_at_death"    # age at death
     ,"died"            # death indicator
     ,"birth_year"      # year of birth 
 # time-invariant above
-    ,"fu_year" # Follow-up year ------------------------------------------------
+    ,"fu_year" # Follow-up year --- --- --- --- --- --- --- --- --- ---
 # time-variant below
     ,"date_at_visit"    # perturbed date of visit
     ,"age_at_visit"     # age at cycle - fractional  
     ,"mmse"             # mini mental state exam (max =30)
     ,"cogn_global"      # global cognition
     ,"dementia"         # dementia diagnosis (?)
-    ,"income_40"        # income at age 40, proxy for SES
-    ,"cogact_old"       # cognitive activity in late life
-    ,"socact_old"       # social activity in late life
-    ,"soc_net"          # social network size
-    ,"social_isolation" # perceived loneliness
-    ) 
+    # ,"income_40"        # income at age 40, proxy for SES
+    # ,"cogact_old"       # cognitive activity in late life
+    # ,"socact_old"       # social activity in late life
+    # ,"soc_net"          # social network size
+    # ,"social_isolation" # perceived loneliness
+    ,"gait"             # Gait Speed in minutes per second (min/sec)
+    ,"grip"             # Extremity strengtg in pounds (lbs)
+    ,"htm"              # height in meters
+    ,"bmi"              # Body Mass Index  in kilograms per meter squared (kg/msq)
+    )
+)
 # save to disk for direct examination
 # write.csv(d,"./data/shared/musti-state-dementia.csv")  
 
@@ -205,11 +214,15 @@ correct_values_at_death <- function(
   ds_ms <- ds_ms %>% correct_values_at_death("date_at_visit",4)
   ds_ms <- ds_ms %>% correct_values_at_death("dementia",4)
   ds_ms <- ds_ms %>% correct_values_at_death("cogn_global",4)
-  ds_ms <- ds_ms %>% correct_values_at_death("income_40",4)
-  ds_ms <- ds_ms %>% correct_values_at_death("cogact_old",4)
-  ds_ms <- ds_ms %>% correct_values_at_death("socact_old",4)
-  ds_ms <- ds_ms %>% correct_values_at_death("soc_net",4)
-  ds_ms <- ds_ms %>% correct_values_at_death("social_isolation",4)
+  ds_ms <- ds_ms %>% correct_values_at_death("gait",4)
+  ds_ms <- ds_ms %>% correct_values_at_death("grip",4)
+  ds_ms <- ds_ms %>% correct_values_at_death("htm",4)
+  ds_ms <- ds_ms %>% correct_values_at_death("bmi",4)
+  # ds_ms <- ds_ms %>% correct_values_at_death("income_40",4)
+  # ds_ms <- ds_ms %>% correct_values_at_death("cogact_old",4)
+  # ds_ms <- ds_ms %>% correct_values_at_death("socact_old",4)
+  # ds_ms <- ds_ms %>% correct_values_at_death("soc_net",4)
+  # ds_ms <- ds_ms %>% correct_values_at_death("social_isolation",4)
 
   # TODO: automate this step
 ds_ms %>% 
@@ -252,6 +265,7 @@ table(ds_ms$state)
 # examine transition matrix
 # msm::statetable.msm(state,id,ds_ms)
 knitr::kable(msm::statetable.msm(state,id,ds_ms))
+# TODO:  examine transition cases for missing states (-2 and -1)
 
 # ---- save-to-disk ------------------------------------------------------------
 # Save as a compress, binary R dataset.  It's no longer readable with a text editor, but it saves metadata (eg, factor information).
@@ -272,7 +286,8 @@ saveRDS(dto, file=path_output, compress="xz")
 # ---- object-verification ------------------------------------------------
 # the production of the dto object is now complete
 # we verify its structure and content:
-dto <- readRDS("./data/unshared/derived/dto.rds")
+dto <- readRDS(path_output)
+pryr::object_size(dto)
 names(dto)
 names(dto$ms_mmse)
 # 1st element - unit(person) level data, all variables available from the source
