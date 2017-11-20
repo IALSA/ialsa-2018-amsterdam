@@ -16,7 +16,7 @@ cat("\f") # clear console
 # ---- load-sources ------------------------------------------------
 # Call `base::source()` on any repo file that defines functions needed below.  
 # Ideally, no real operations are performed in these sourced scripts. 
-source("./scripts/common-functions.R") # used in multiple reports
+source("./scripts/function-common.R") # used in multiple reports
 
 # ---- load-packages ----------------------------------------------
 # Attach packages so their functions don't need to be qualified when used
