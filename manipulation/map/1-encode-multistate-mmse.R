@@ -42,6 +42,58 @@ names(dto)
 ds <- dto[["unitData"]]
 
 # table(ds$fu_year, ds$dementia)
+ds <- ds %>% 
+  dplyr::mutate(
+    wave = fu_year # the function to examine temporal structure depend on dataset to have a variable "wave"
+  )
+
+
+# some predictors needs to be transformed into time-invariate
+# we will follow the convention of computing the median value across lifespan
+# instead of assigned the value at baseline (but this is somewhat arbitrary)
+
+# ---- force-to-static-height ---------------------------
+ds %>% view_temporal_pattern("htm", 2) # with seed
+ds %>% temporal_pattern("htm") # random every time
+ds %>% over_waves("htm"); # 2, 4, 6
+# check that values are the same across waves
+ds %>%
+  dplyr::group_by(id) %>%
+  dplyr::summarize(unique = length(unique(htm))) %>%
+  dplyr::arrange(desc(unique)) # unique > 1 indicates change over wave
+# grab the value for the first wave and forces it to all waves
+ds <- ds %>%
+  dplyr::group_by(id) %>%
+  # compute median height across lifespan
+  dplyr::mutate(
+    htm_med   = median(htm, na.rm =T) # computes the median height across lifespan
+  ) %>%
+  dplyr::ungroup()
+# examine the difference
+ds %>% view_temporal_pattern("htm_med", 2)
+ds %>% view_temporal_pattern("htm", 2)
+
+# ---- force-to-static-bmi ---------------------------
+ds %>% view_temporal_pattern("bmi", 2) # with seed
+ds %>% temporal_pattern("bmi") # random every time
+ds %>% over_waves("bmi"); # 2, 4, 6
+# check that values are the same across waves
+ds %>%
+  dplyr::group_by(id) %>%
+  dplyr::summarize(unique = length(unique(bmi))) %>%
+  dplyr::arrange(desc(unique)) # unique > 1 indicates change over wave
+# grab the value for the first wave and forces it to all waves
+ds <- ds %>%
+  dplyr::group_by(id) %>%
+  # compute median height across lifespan
+  dplyr::mutate(
+    bmi_med   = median(bmi, na.rm =T) # computes the median height across lifespan
+  ) %>%
+  dplyr::ungroup()
+# examine the difference
+ds %>% view_temporal_pattern("bmi_med", 2)
+ds %>% view_temporal_pattern("bmi", 2)
+
 
 
 # ---- describe-before-encoding --------------------------------------------------------------
@@ -69,6 +121,8 @@ ds_long <- ds %>%
     ,"age_at_death"    # age at death
     ,"died"            # death indicator
     ,"birth_year"      # year of birth 
+    ,"htm_med"         # height in meters, median across observed across lifespan
+    ,"bmi_med"         # Body Mass Index, median across observed across lifespan
 # time-invariant above
     ,"fu_year" # Follow-up year --- --- --- --- --- --- --- --- --- ---
 # time-variant below
@@ -77,11 +131,6 @@ ds_long <- ds %>%
     ,"mmse"             # mini mental state exam (max =30)
     ,"cogn_global"      # global cognition
     ,"dementia"         # dementia diagnosis (?)
-    # ,"income_40"        # income at age 40, proxy for SES
-    # ,"cogact_old"       # cognitive activity in late life
-    # ,"socact_old"       # social activity in late life
-    # ,"soc_net"          # social network size
-    # ,"social_isolation" # perceived loneliness
     ,"gait"             # Gait Speed in minutes per second (min/sec)
     ,"grip"             # Extremity strengtg in pounds (lbs)
     ,"htm"              # height in meters
@@ -105,6 +154,8 @@ t <- table(ds_long[,"fu_year"], ds_long[,"died"]); t[t==0]<-".";t
 # raw_smooth_lines(ds_long, "mmse")
 
 # ---- encode-missing-states ---------------------------
+# create an object ds_miss from ds_long 
+
 # x <- c(NA, 5, NA, 7)
 determine_censor <- function(x, is_right_censored){
   ifelse(is_right_censored, -2,
