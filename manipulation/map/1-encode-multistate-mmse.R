@@ -66,6 +66,7 @@ ds <- ds %>%
   dplyr::group_by(id) %>%
   # compute median height across lifespan
   dplyr::mutate(
+    htm_bl    = dplyr::first(htm),    # 
     htm_med   = median(htm, na.rm =T) # computes the median height across lifespan
   ) %>%
   dplyr::ungroup()
@@ -87,12 +88,62 @@ ds <- ds %>%
   dplyr::group_by(id) %>%
   # compute median height across lifespan
   dplyr::mutate(
+    bmi_bl    = dplyr::first(bmi),    # 
     bmi_med   = median(bmi, na.rm =T) # computes the median height across lifespan
   ) %>%
   dplyr::ungroup()
 # examine the difference
 ds %>% view_temporal_pattern("bmi_med", 2)
 ds %>% view_temporal_pattern("bmi", 2)
+
+# ---- force-to-static-gait ---------------------------
+ds %>% view_temporal_pattern("gait", 2) # with seed
+ds %>% temporal_pattern("gait") # random every time
+ds %>% over_waves("gait"); # 2, 4, 6
+# check that values are the same across waves
+ds %>%
+  dplyr::group_by(id) %>%
+  dplyr::summarize(unique = length(unique(gait))) %>%
+  dplyr::arrange(desc(unique)) # unique > 1 indicates change over wave
+# grab the value for the first wave and forces it to all waves
+ds <- ds %>%
+  dplyr::group_by(id) %>%
+  # compute median height across lifespan
+  dplyr::mutate(
+    gait_bl    = dplyr::first(gait),    # 
+    gait_med   = median(gait, na.rm =T) # computes the median height across lifespan
+  ) %>%
+  dplyr::ungroup()
+# examine the difference
+ds %>% view_temporal_pattern("gait_med", 2)
+ds %>% view_temporal_pattern("gait", 2)
+
+
+
+# ---- force-to-static-grip ---------------------------
+ds %>% view_temporal_pattern("grip", 2) # with seed
+ds %>% temporal_pattern("grip") # random every time
+ds %>% over_waves("grip"); # 2, 4, 6
+# check that values are the same across waves
+ds %>%
+  dplyr::group_by(id) %>%
+  dplyr::summarize(unique = length(unique(grip))) %>%
+  dplyr::arrange(desc(unique)) # unique > 1 indicates change over wave
+# grab the value for the first wave and forces it to all waves
+ds <- ds %>%
+  dplyr::group_by(id) %>%
+  # compute median height across lifespan
+  dplyr::mutate(
+    grip_bl    = dplyr::first(grip),    # 
+    grip_med   = median(grip, na.rm =T) # computes the median height across lifespan
+  ) %>%
+  dplyr::ungroup()
+# examine the difference
+ds %>% view_temporal_pattern("grip_med", 2)
+ds %>% view_temporal_pattern("grip", 2)
+
+
+
 
 
 

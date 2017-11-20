@@ -12,9 +12,10 @@ requireNamespace("testit", quietly=TRUE)  # condition testing
 # base::source("http://www.ucl.ac.uk/~ucakadl/ELECT/ELECT.r") # load  ELECT functions
 base::source("./scripts/ELECT.r") # load  ELECT functions
 base::source("./scripts/ELECT-utility-functions.R") # ELECT utility functions
+base::source("./scripts/functions-msm.R")
 
 # ---- declare-globals ---------------------------------------------------------
-path_folder <- "./data/shared/derived/models/"
+path_folder <- "./data/shared/derived/models/" # store estimated models here
 digits = 2
 cat("\n Objected with fitted models will be saved in the folder : \n")
 cat("`",path_folder,"`")
@@ -36,7 +37,7 @@ names(dto[["metaData"]])       # 2nd element - meta data, info about variables
 names(dto[["ms_mmse"]])        # 3rd element - data for MMSE outcome
 ds_miss <- dto$ms_mmse$missing # data after encoding missing states (-1, -2)
 ds_ms <- dto$ms_mmse$multi     # data after encoding multistates (1,2,3,4)
-
+ 
 ###############################################
 ##  Part I: data preparation                ##
 ###############################################
@@ -129,7 +130,7 @@ cat("\n Number of subjects with both IMS and RC state(s) : ",length(ids_with_bot
 # save this version of the data
 # match selected ids to the raw versions of the data for descriptives
 
-dto[["ms_mmse"]][["model"]] <- ds_clean
+dto[["ms_mmse"]][["model"]] <- ds_clean # the dataset used for modeling 
 names(dto$ms_mmse)
 saveRDS(dto,"./data/unshared/derived/2-dto.rds")
 # save clean data object for records and faster access
@@ -194,8 +195,10 @@ ds <- ds_clean %>%
     ,birth_year    # year of birth         
     ,male          # sex
     ,edu           # years of education
-    ,cogact_old    # cognitive activity
-    ,soc_net       # size of social network
+    ,htm_med         # height in meters, median across observed across lifespan
+    ,bmi_med         # Body Mass Index, median across observed across lifespan
+    # ,cogact_old    # cognitive activity
+    # ,soc_net       # size of social network
     ,fu_year       # follow-up year       
     ,firstobs      # baseline indicator        
     ,age           # age at visit
@@ -278,88 +281,6 @@ estimate_multistate <- function(
 } 
 
   
-# ---- define-support-functions ----------------------
-get_crude_Q <- function(
-  ds
-  ,Q
-  ,cov_names
-){
-  formula_ <- as.formula(paste0("state ~ ",cov_names))
-  Q_crude <- crudeinits.msm(
-    formula = formula_, 
-    subject = id, 
-    qmatrix = Q, 
-    data = ds,     
-    censor        = c(-1,-2),
-    censor.states = list(c(1,2,3), c(1,2,3)) 
-  )
-  return(Q_crude)
-}
-
-msm_summary <- function(
-  model
-){
-cat("\n-2loglik =", model$minus2loglik,"\n")
-cat("Convergence code =", model$opt$convergence,"\n")
-p    <- model$opt$par
-p.se <- sqrt(diag(solve(1/2*model$opt$hessian)))
-print(cbind(p=round(p,digits),
-            se=round(p.se,digits),"Wald ChiSq"=round((p/p.se)^2,digits),
-            "Pr>ChiSq"=round(1-pchisq((p/p.se)^2,df=1),digits)),
-      quote=FALSE)
-}
-
-msm_details <- function(
-  model
-){ 
-  # intensity matrix
-  cat("\n Intensity matrix : \n")
-  print(qmatrix.msm(model)) 
-  # qmatrix.msm(model, covariates = list(male = 0))
-  # transition probability matrix
-  t_ <- 2
-  cat("\n Transition probability matrix for t = ", t_," : \n")
-  print(pmatrix.msm(model, t = t_)) # t = time, in original metric
-  # misclassification matrix
-  cat("\n Misclassification matrix : \n")
-  suppressWarnings(print(ematrix.msm(model), warnings=F))
-  # hazard ratios
-  # cat("\n Hazard ratios : \n")
-  # print(hazard.msm(model))
-  # mean sojourn times
-  cat("\n Mean sojourn times : \n")
-  print(sojourn.msm(model))
-  # probability that each state is next
-  cat("\n Probability that each state is next : \n")
-  suppressWarnings(print(pnext.msm(model)))
-  # total length of stay
-  cat("\n  Total length of stay : \n")
-  print(totlos.msm(model))
-  # expected number of visits to the state
-  cat("\n Expected number of visits to the state : \n")
-  suppressWarnings(print(envisits.msm(model)))
-  # ratio of transition intensities
-  # qratio.msm(model,ind1 = c(2,1), ind2 = c(1,2))
-}
-
-# adds neat styling to your knitr table
-neat <- function(x){
-  # knitr.table.format = "html"
-  x_t <- x %>%
-    # x %>%
-    # knitr::kable() %>%
-    knitr::kable(format="html") %>%
-    kableExtra::kable_styling(
-      bootstrap_options = c("striped", "hover", "condensed","responsive"),
-      # bootstrap_options = c( "condensed"),
-      full_width = F,
-      position = "left"
-    )
-  # cat("\n",x_t,"\n")
-  # print(x_t, n=n_)
-  return(x_t)
-}
-# ds %>% distinct(id) %>% count() %>% neat(10)
 
 # ---- specify-model --------------------------
 q <- .01
@@ -402,15 +323,15 @@ initprobs_ = initial_probabilities
 
 # model A_v1
 estimate_multistate("A_v1", ds, Q_crude, E, qnames,
-                    cf = "age + male  + edu + cogact_old + soc_net",
+                    cf = "age + male  + edu + htm_med + bmi_med",
                     cb = "age",
-                    cd = "age + male  + edu + cogact_old + soc_net")
+                    cd = "age + male  + edu + htm_med + bmi_med")
 
 # model A_v2
 estimate_multistate("A_v2", ds, Q_crude, E, qnames,
-                    cf = "age + male  + edu + cogact_old + soc_net",
-                    cb = "age + male  + edu + cogact_old + soc_net",
-                    cd = "age + male  + edu + cogact_old + soc_net")
+                    cf = "age + male  + edu + htm_med + bmi_med",
+                    cb = "age + male  + edu + htm_med + bmi_med",
+                    cd = "age + male  + edu + htm_med + bmi_med")
 
 # ---- inspect-estimated-model -----------------------------
 # call in the model object for inspection
@@ -425,6 +346,7 @@ msm_details(msm_model)
 
 # ---- msm1-1 -----------------------------------
 model <- readRDS("./data/shared/derived/models/A_v1.rds")
+pryr::object_size(model)
 model$call
 msm_summary(model) 
 # ---- msm1-2 -----------------------------------
