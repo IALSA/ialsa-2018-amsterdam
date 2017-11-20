@@ -4,7 +4,7 @@ Mutistate models of physical decline: Coordinated analysis with replication
 
 # Research Question
 
-> How does gait speed influce transition among cognitive states?
+> Is gait speed associated with transitions among cognitive states?
 
 
 # Model specification
