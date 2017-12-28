@@ -69,3 +69,4 @@ README.html
 data/unshared/derived/copy/dto.rds
 data/unshared/derived/copy/multistate_mmse.rds
 !data/shared/derived/models.rds
+.Rprofile
