@@ -1,6 +1,6 @@
 # ialsa-2018-amsterdam
 
-Mutistate models of physical decline: Coordinated analysis with replication 
+Mutistate models of physical decline: Coordinated analysis with replication across several longitudinal studies.
 
 # Research Question
 
