@@ -199,7 +199,7 @@ encode_multistates <- function(
     # Rebuild the data:
     if(i==1){dta1 <- ddta.i}else{dta1 <- rbind(dta1,ddta.i)}
   }
-  dta1[,age_death_name] <- NULL
+  # dta1[,age_death_name] <- NULL
   colnames(dta1)[colnames(dta1)=="raw_outcome"] <- outcome_name
   dta1[dta1$state == dead_state_value,outcome_name] <- NA_real_
   dta1[dta1$state == dead_state_value,"fu_year"] <- NA_real_
@@ -344,24 +344,6 @@ dto[["encoded"]][["corrected"]]  <- ds_corrected  # we preserve these forms to c
 names(dto)
 names(dto$encoded)
 saveRDS(dto, file=path_output, compress="xz")
-
-# ---- object-verification ------------------------------------------------
-# the production of the dto object is now complete
-# we verify its structure and content:
-dto <- readRDS(path_output)
-pryr::object_size(dto)
-names(dto)
-names(dto$ms_mmse)
-# 1st element - unit(person) level data, all variables available from the source
-dplyr::tbl_df(dto[["unitData"]])
-# 2nd element - meta data, info about variables
-dto[["metaData"]] %>% tibble::as_tibble()
-# 3rd element - data for MMSE outcome
-names(dto[["ms_mmse"]])
-# dto$ms_mmse[["ds_long"]] # subset of variables focal to the project
-# dto$ms_mmse[["ds_miss"]] # missing states are encoded
-# dto$ms_mmse[["ds_ms"]]   # multi   states are encoded
-
 
 
 

@@ -44,6 +44,10 @@ names(dto$encoded) # is a list consisting of three data frames representing enco
 # dto$encoded$corrected contains the data most ready for modeling
 # we will refer to is as `ds` in this script, as it is the in its primary focus
 ds <- dto$encoded$corrected
+ds <- dto$encoded$corrected
+ds <- dto$encoded$multistate
+ds %>% glimpse()
+
 
 # ---- inspect-data -------------------------------------------------------------
 names(dto)
@@ -243,8 +247,8 @@ sample_ids <- sample(unique(ds_valid$id), 100)
 ds_estimation <- ds_valid %>% 
   # dplyr::filter(id %in% sample_ids) %>% # make sample smaller if needed 
   # exclude individuals with missing states
-  # dplyr::filter(!id %in% ids_with_im) %>%
-  # dplyr::filter(!id %in% ids_with_rc) %>%
+  dplyr::filter(!id %in% ids_with_im) %>%
+  dplyr::filter(!id %in% ids_with_rc) %>%
   dplyr::mutate(
     male = as.numeric(male), 
     age    = (age - age_center), # centering
