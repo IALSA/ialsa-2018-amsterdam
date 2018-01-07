@@ -16,13 +16,14 @@ cat("\f") # clear console
 # ---- load-sources ------------------------------------------------
 # Call `base::source()` on any repo file that defines functions needed below.  
 # Ideally, no real operations are performed in these sourced scripts. 
-source("./scripts/function-common.R") # used in multiple reports
+source("./scripts/functions-common.R") # used in multiple reports
 
 # ---- load-packages ----------------------------------------------
 # Attach packages so their functions don't need to be qualified when used
 # See more : http://r-pkgs.had.co.nz/namespace.html#search-path
 library(magrittr) # Pipes
 library(ggplot2) # Graphs
+# library(tidyverse)
 # Functions of these packages will need to be qualified when used
 # See more: http://r-pkgs.had.co.nz/namespace.html#search-path
 requireNamespace("tidyr") #  data manipulation
@@ -39,16 +40,21 @@ metadata_path_input <- "./data/shared/meta/map/meta-data-map-2016-11-27.csv"
 # ---- load-data ------------------------------------------------
 # load data objects
 dto      <- readRDS(data_path_input)
+lapply(dto,names)
 # dto already contains meta data, but you should load a local one for greater control
 metaData <- read.csv(metadata_path_input, stringsAsFactors=F, header=T)
 
 # ---- inspect-data ----------------------------------------------
 # inspect loaded data objects (using basic demographic variables )
-ds <- as.data.frame(dto$unitData) # assing alias
+ds <- as.data.frame(dto$unitData) # assing alias to use in this session
 length(unique(ds$id))  # sample size, number of respondents
 # t <- table(ds[,"fu_year"], ds[,"died"]); t[t==0]<-".";t 
 # t <- table(ds[,"msex"], ds[,"race"], useNA = "always"); t[t==0]<-".";t 
 # t <- table(ds[,"educ"], ds[,"race"]); t[t==0]<-".";t 
+
+# ----- tweak-data -----------------------
+# apply general tweaks on  unit data
+ds <- ds 
 
 # ---- assemble-data-object-dto-1 --------------------------------------
 # reconstruct the dto to be used in this project
@@ -71,15 +77,15 @@ meta_data <- dto[["metaData"]] %>%
 knitr::kable(meta_data)
 
 # # ----- apply-meta-data-1 -------------------------------------
-# # rename variables
-# d_rules <- dto[["metaData"]] %>%
-#   dplyr::filter(name %in% names(ds)) %>% 
-#   dplyr::select(name, name_new ) # leave only collumn, which values you wish to append
-# names(ds) <- d_rules[,"name_new"]
-# # transfer changes to dto
-# ds <- ds %>% dplyr::filter(study == "MAP ")
-# table(ds$study)
-# dto[["unitData"]] <- ds 
+# rename variables
+d_rules <- dto[["metaData"]] %>%
+  dplyr::filter(name %in% names(ds)) %>%
+  dplyr::select(name, name_new ) # leave only collumn, which values you wish to append
+names(ds) <- d_rules[,"name_new"]
+# transfer changes to dto
+ds <- ds %>% dplyr::filter(study == "MAP ")
+table(ds$study)
+dto[["unitData"]] <- ds
 
 # ---- save-to-disk ------------------------------------------------------------
 
