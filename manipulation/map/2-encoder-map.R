@@ -6,9 +6,9 @@ rm(list=ls(all=TRUE))  #Clear the variables from previous runs.
 # ---- load-sources ------------------------------------------------------------
 # Call `base::source()` on any repo file that defines functions needed below.  Ideally, no real operations are performed.
 source("./scripts/functions-common.R") # used in multiple reports
-# source("./scripts/graph-presets.R") # fonts, colors, themes 
-# source("./scripts/general-graphs.R")
-# source("./scripts/specific-graphs.R")
+source("./scripts/graph-presets.R") # fonts, colors, themes
+source("./scripts/graph-general.R")
+source("./scripts/graph-specific.R")
 # ---- load-packages -----------------------------------------------------------
 # Attach these packages so their functions don't need to be qualified: http://r-pkgs.had.co.nz/namespace.html#search-path
 library(magrittr) #Pipes
@@ -17,6 +17,7 @@ library(magrittr) #Pipes
 requireNamespace("ggplot2", quietly=TRUE)
 requireNamespace("dplyr", quietly=TRUE) #Avoid attaching dplyr, b/c its function names conflict with a lot of packages (esp base, stats, and plyr).
 requireNamespace("testit", quietly=TRUE)
+requireNamespace("msm", quietly=TRUE)
 # requireNamespace("plyr", quietly=TRUE)
 
 # ---- declare-globals ---------------------------------------------------------
@@ -33,27 +34,18 @@ dto <- readRDS(path_input)
 
 # ---- inspect-data -------------------------------------------------------------
 names(dto)
-# 1st element - unit(person) level data
-# dplyr::tbl_df(dto[["unitData"]])
+# 1st element - raw data, as obtained from ialsa-study-curator for RUSH-MAP study
+# dplyr::tbl_df(dto[["raw"]])
 # 2nd element - meta data, info about variables
-# dto[["metaData"]]
-
+# dto[["meta"]]
+# 3rd element - data produced by the greeter script
+# dto[["greeted"]]
+# 4th element - data produced by the tuner script
+# dto[["tuned"]]
 
 # ---- tweak-data --------------------------------------------------------------
-ds <- dto[["unitData"]]
-
-# table(ds$fu_year, ds$dementia)
-ds <- ds %>% 
-  dplyr::mutate(
-    wave = fu_year # the function to examine temporal structure depend on dataset to have a variable "wave"
-  ) %>% 
-  dplyr::rename(
-    physact = phys5itemsum
-  )
-
-
-
-
+ds <- dto[["tuned"]]
+ds_long <- ds
 
 # ---- describe-before-encoding --------------------------------------------------------------
 # if died==1, all subsequent focal_outcome==DEAD.
@@ -63,73 +55,9 @@ ids <- sample(unique(ds$id),3) # randomly select a few ids
 # custom select a few ids that give different pattern of data. To be used for testing
 ids <- c(33027) #,33027, 50101073, 6804844, 83001827 , 56751351, 13485298, 30597867)
 
-# ---- into-long-format -------------------------
-# MAP study is already in long format, but others may not be
-ds_long <- ds %>% 
-  # dplyr::filter(id %in% ids) %>% # turn this off when using the entire sample
-  dplyr::mutate(
-    age_at_bl    = as.numeric(age_bl),
-    age_at_death = as.numeric(age_death), 
-    male      = as.logical(ifelse(!is.na(msex), msex=="1", NA_integer_)),
-    edu       = as.numeric(educ)
-  ) %>% 
-  dplyr::select_(.dots = c(
-    "id"             # personal identifier
-    ,"male"          # gender
-    ,"edu"           # years of education
-    ,"age_bl"        # age at baseline
-    ,"age_at_death"  # age at death
-    ,"died"          # death indicator
-    ,"birth_year"    # year of birth 
-    ,"htm_med"       # height in meters, median across observed across lifespan
-    ,"bmi_med"       # Body Mass Index, median across observed across lifespan
-    ,"physact_med"   # Physical activity, median across observed across lifespan
-    # time-invariant above
-    ,"fu_year"       # Follow-up year --- --- --- --- --- --- --- --- --- ---
-    # time-variant below
-    ,"date_at_visit" # perturbed date of visit
-    ,"age_at_visit"  # age at cycle - fractional  
-    ,"mmse"          # mini mental state exam (max =30)
-    ,"cogn_global"   # global cognition
-    ,"dementia"      # dementia diagnosis (?)
-    ,"gait"          # Gait Speed in minutes per second (min/sec)
-    ,"grip"          # Extremity strengtg in pounds (lbs)
-    ,"htm"           # height in meters
-    ,"bmi"           # Body Mass Index  in kilograms per meter squared (kg/msq)
-    ,"physact"       # Physical activity (sum of 5 items)
-    )
-)
-# save to disk for direct examination
-# write.csv(d,"./data/shared/musti-state-dementia.csv")  
 
-
-# inspect crated data object
-ds_long %>% 
-  dplyr::filter(id %in% ids) %>% 
-  print()
-
-# ---- attrition-effect ------------------------------
-t <- table(ds_long[,"fu_year"], ds_long[,"died"]); t[t==0]<-".";t
-
-
-# ----- mmmse-trajectories ----------------------
-# raw_smooth_lines(ds_long, "mmse")
-
-
-
-# ---- add-firstobs-flag -----------------------------
-(N  <- length(unique(ds_ms$id)))
-subjects <- as.numeric(unique(ds_ms$id))
-# Add first observation indicator
-# this creates a new dummy variable "firstobs" with 1 for the first wave
-cat("\nFirst observation indicator is added.\n")
-offset <- rep(NA,N)
-for(i in 1:N){offset[i] <- min(which(ds_ms$id==subjects[i]))}
-firstobs <- rep(0,nrow(ds_ms))
-firstobs[offset] <- 1
-ds_ms <- cbind(ds_ms ,firstobs=firstobs)
-print(head(ds_ms))
 # ---- encode-missing-states ---------------------------
+## ## ## - STEP 1 - Missing values on criterion 
 # create an object ds_miss from ds_long 
 
 # x <- c(NA, 5, NA, 7)
@@ -209,23 +137,36 @@ for(i in 1:N){
   # Rebuild the data:
   if(i==1){ds_miss <- dta.i}else{ds_miss <- rbind(ds_miss,dta.i)}
 } 
-# inspect created data object
+
+# the created data set (ds_miss) replaces NA in mmse with cencored values (-1, -2) where appropriate
+ds_long %>% 
+  dplyr::filter(id %in% ids) %>% 
+  as.data.frame() %>% 
+  print()
+# note the updated value in mmse and the new variabe presumed_alive
 ds_miss %>% 
   dplyr::filter(id %in% ids) %>% 
   print()
-# ds_long %>% dplyr::glimpse()
 
-
-
-
-
+# ds_miss contains the mmse values corrected for missing states (-1,-2) 
+# (e.g. if last mmse observation was NA, but we new respondent was alive)
+# and presumed_alive indicator
 
 # ---- encode-multi-states ------------------------------
+## ## ## - STEP 2 - Criterion into a state variable
+
+# in this step we focus on a variable that will identify the states to be modeled
+# a few things will happen:
+# 1) age_at_visit will become age (needed for passing to msm estimation routines)
+# 2) variable state will replace mmse (the basis for it)
+# 3) mmse will reappear at the end of the set
+# 4) a NEW ROW will be created for each subject containing the measure at death
+
 encode_multistates <- function(
-  d, # data frame in long format 
-  outcome_name, # measure to compute live states
-  age_name, # age at each wave
-  age_death_name, # age of death
+  d,               # data frame in long format 
+  outcome_name,    # measure to compute live states
+  age_name,        # age at each wave
+  age_death_name,  # age of death
   dead_state_value # value to represent dead state
 ){
   # declare arguments for debugging
@@ -265,21 +206,38 @@ encode_multistates <- function(
   return(dta1)
 }
 
-ds_ms <- encode_multistates(
-  d                = ds_miss,
-  outcome_name     = "mmse",         # currently supports mmse only, todo: rework functins in tidyverse
-  age_name         = "age_at_visit",
-  age_death_name   = "age_at_death",
-  dead_state_value = 4
-)
-# set.seed(NULL)
-# ids <- sample(unique(ds$id),1)
-ids <- 50107169
-ds_ms %>% 
-  dplyr::filter(id %in% ids) %>% 
+ds_ms <- 
+  encode_multistates(
+    d                = ds_miss,
+    outcome_name     = "mmse",         # currently supports mmse only, todo: rework functins in tidyverse
+    age_name         = "age_at_visit",
+    age_death_name   = "age_at_death",
+    dead_state_value = 4
+  )
+
+# review
+ds_miss %>% 
+  dplyr::filter(id %in% 50107169) %>% 
   print()
+# notice how 
+ds_ms %>% 
+  dplyr::filter(id %in% 50107169) %>% 
+  print()
+# 1) age_at_visit becomes age (needed for modeling)
+# 2) variable state replaces mmse (which was the basis for it)
+# 3) mmse reappears at the end of the set
+# 4) most importantly, ds_ms creates an additional row for each subject
+# this row identifies measurement at death of which we know for sure only age 
+# all other which refer to the time of death should be set to NA as unknown
 
 # ---- correct-values-at-death -----------------------
+## ## ## - STEP 3 - Longitudinal corrections
+
+# previous step created an additional row for each subject, measurement at death
+# the values in other variables carried over into the new row
+# this is ok with time-invariant measures (to the left of  wave/fu_year)
+# but NOT ok with time-variant   measures (to the right of wave/fu_year)
+# time-invariant measures must be replaced with NA in measures at the moment of death
 correct_values_at_death <- function(
   ds, # data frame in long format with multistates encoded
   outcome_name, # measure to correct value in
@@ -288,35 +246,46 @@ correct_values_at_death <- function(
   ds[ds$state == dead_state_value, outcome_name] <- NA_real_
   return(ds)
 }
-  # manually correct values for data_at_visit
-  ds_ms[ds_ms$state == 4, "date_at_visit"] <- NA # because of date format
-  # automatically correct values for time-variant measures
-  ds_ms <- ds_ms %>% correct_values_at_death("date_at_visit",4)
-  ds_ms <- ds_ms %>% correct_values_at_death("dementia",4)
-  ds_ms <- ds_ms %>% correct_values_at_death("cogn_global",4)
-  ds_ms <- ds_ms %>% correct_values_at_death("gait",4)
-  ds_ms <- ds_ms %>% correct_values_at_death("grip",4)
-  ds_ms <- ds_ms %>% correct_values_at_death("htm",4)
-  ds_ms <- ds_ms %>% correct_values_at_death("bmi",4)
-  # ds_ms <- ds_ms %>% correct_values_at_death("income_40",4)
-  # ds_ms <- ds_ms %>% correct_values_at_death("cogact_old",4)
-  # ds_ms <- ds_ms %>% correct_values_at_death("socact_old",4)
-  # ds_ms <- ds_ms %>% correct_values_at_death("soc_net",4)
-  # ds_ms <- ds_ms %>% correct_values_at_death("social_isolation",4)
+  ds_corrected <- ds_ms # inherits the form
 
+  # manually correct values for data_at_visit
+  ds_corrected[ds_corrected$state == 4, "date_at_visit"] <- NA # because of date format
+  # automatically correct values for time-variant measures
+  ds_corrected <- ds_corrected %>% correct_values_at_death("wave",4)
+  # ds_corrected <- ds_corrected %>% correct_values_at_death("date_at_visit",4)
+  ds_corrected <- ds_corrected %>% correct_values_at_death("dementia",4)
+  ds_corrected <- ds_corrected %>% correct_values_at_death("cogn_global",4)
+  ds_corrected <- ds_corrected %>% correct_values_at_death("gait",4)
+  ds_corrected <- ds_corrected %>% correct_values_at_death("grip",4)
+  ds_corrected <- ds_corrected %>% correct_values_at_death("htm",4)
+  ds_corrected <- ds_corrected %>% correct_values_at_death("bmi",4)
+  ds_corrected <- ds_corrected %>% correct_values_at_death("physact",4)
+  ds_corrected <- ds_corrected %>% correct_values_at_death("firstobs",4)
+  # ds_corrected <- ds_corrected %>% correct_values_at_death("income_40",4)
+  # ds_corrected <- ds_corrected %>% correct_values_at_death("cogact_old",4)
+  # ds_corrected <- ds_corrected %>% correct_values_at_death("socact_old",4)
+  # ds_corrected <- ds_corrected %>% correct_values_at_death("soc_net",4)
+  # ds_corrected <- ds_corrected %>% correct_values_at_death("social_isolation",4)
   # TODO: automate this step
-ds_ms %>% 
+  
+
+# presumed_alive is logical for the state of data at the time of access
+# TODO: place the presumed_alive variabe together with time invariant variables
+
+# inspect the resultant data set  
+ds_corrected %>% 
   dplyr::filter(id %in% ids) %>% 
   print()
 
-
-
+# ds_corrected contains data set of long structure with respect to time
+# It has been augmented with the measurement at the time of death
+# and corrected for time-invariant and time-variant values in other variabels
 
 # ---- inspect-created-multistates ----------------------------------
 # compare before and after ms encoding
 view_id <- function(ds1,ds2,id){
   cat("Data set A:","\n")
-  print(ds1[ds1$id==id,])
+  print(ds1[ds1$id==id,] %>% as.data.frame())
   cat("\nData set B","\n")
   print(ds2[ds2$id==id,])
 }
@@ -324,13 +293,34 @@ view_id <- function(ds1,ds2,id){
 set.seed(39)
 ids <- sample(unique(ds_miss$id),1)
 # ids <- 68914513
-view_id(ds_long, ds_miss, ids)
-view_id(ds_miss, ds_ms, ids)
-view_id(ds_long, ds_ms, ids)
+ids <- c(33027) # trailing NA; presumed alive
+# ids <- c(1243685) # dead; only 4 obs; developed dementia on the last one
+
+view_id(ds_long, ds_miss, 33027) # NA -> -1 OR -2  
+view_id(ds_miss, ds_ms, 33027)   # age_at_visit -> age; mmse -> state; + mmse
+view_id(ds_long, ds_ms, 33027)   # all together
+
+view_id(ds_long, ds_miss, 402800) # NA -> -1 OR -2   # nothing happens for this person
+view_id(ds_miss, ds_ms, 402800) # age_at_visit -> age; mmse -> state; + mmse
+view_id(ds_ms,ds_corrected, 402800) # longitudinal corrections
+
+
+
+# to find people you might use for examples
+target_cohort <- 
+  ds_long %>% 
+  dplyr::filter(died==1) %>% 
+  dplyr::group_by(id) %>% 
+  dplyr::summarize(n=n()) %>% 
+  dplyr::filter(n==2) %>% 
+  dplyr::arrange(id)
+
+  
+
 
 # ----- transitions-matrix -----------------------------
 # simple frequencies of states
-table(ds_ms$state)
+table(ds_corrected$state)
 # examine transition matrix
 # msm::statetable.msm(state,id,ds_ms)
 knitr::kable(msm::statetable.msm(state,id,ds_ms))
@@ -346,10 +336,13 @@ knitr::kable(msm::statetable.msm(state,id,ds_ms))
 # it is useful to have access to all three while understanding/verifying encodings
 
 names(dto)
-# dto[["ms_mmse"]][["long"]]    <- ds_long
-dto[["ms_mmse"]][["missing"]] <- ds_miss
-dto[["ms_mmse"]][["multi"]]   <- ds_ms
-names(dto$ms_mmse)
+dto[["encoded"]] <- list()
+dto[["encoded"]][["missing"]]    <- ds_miss       # we preserve these forms to compare later
+dto[["encoded"]][["multistate"]] <- ds_ms         # we preserve these forms to compare later
+dto[["encoded"]][["corrected"]]  <- ds_corrected  # we preserve these forms to compare later 
+
+names(dto)
+names(dto$encoded)
 saveRDS(dto, file=path_output, compress="xz")
 
 # ---- object-verification ------------------------------------------------

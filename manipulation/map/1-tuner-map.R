@@ -6,9 +6,9 @@ rm(list=ls(all=TRUE))  #Clear the variables from previous runs.
 # ---- load-sources ------------------------------------------------------------
 # Call `base::source()` on any repo file that defines functions needed below.  Ideally, no real operations are performed.
 source("./scripts/functions-common.R") # used in multiple reports
-# source("./scripts/graph-presets.R") # fonts, colors, themes 
-# source("./scripts/general-graphs.R")
-# source("./scripts/specific-graphs.R")
+source("./scripts/graph-presets.R") # fonts, colors, themes
+source("./scripts/graph-general.R")
+source("./scripts/graph-specific.R")
 # ---- load-packages -----------------------------------------------------------
 # Attach these packages so their functions don't need to be qualified: http://r-pkgs.had.co.nz/namespace.html#search-path
 library(magrittr) #Pipes
@@ -21,9 +21,9 @@ requireNamespace("testit", quietly=TRUE)
 
 # ---- declare-globals ---------------------------------------------------------
 # What the script intakes
-path_input <- "./data/unshared/derived/0-dto.rds"
+path_input <- "./data/unshared/derived/dto-0-greeted.rds"
 # What the script produces
-path_output <- "./data/unshared/derived/1-dto.rds"
+path_output <- "./data/unshared/derived/dto-1-tuned.rds"
 
 options(
   origin="1970-01-01"
@@ -35,24 +35,21 @@ dto <- readRDS(path_input)
 
 # ---- inspect-data -------------------------------------------------------------
 names(dto)
-# 1st element - unit(person) level data
-# dplyr::tbl_df(dto[["unitData"]])
+# 1st element - raw data, as obtained from ialsa-study-curator for RUSH-MAP study
+# dplyr::tbl_df(dto[["raw"]])
 # 2nd element - meta data, info about variables
-# dto[["metaData"]]
+# dto[["meta"]]
 
 
 # ---- tweak-data --------------------------------------------------------------
-ds <- dto[["unitData"]]
+ds <- dto[["greeted"]]
 
 # table(ds$fu_year, ds$dementia)
 ds <- ds %>% 
   dplyr::mutate(
-    wave = fu_year # the function to examine temporal structure depend on dataset to have a variable "wave"
-  ) %>% 
-  dplyr::rename(
-    physact = phys5itemsum
-  )
-
+    # create a parallel variable to be expected in script working with its temporal structure
+    wave = fu_year 
+  ) 
 
 # some predictors needs to be transformed into time-invariate
 # we will follow the convention of computing the median value across lifespan
@@ -72,7 +69,7 @@ ds <- ds %>%
   dplyr::group_by(id) %>%
   # compute median height across lifespan
   dplyr::mutate(
-    htm_bl    = dplyr::first(htm),    # 
+    htm_bl    = dplyr::first(htm),    # forces to baseline
     htm_med   = median(htm, na.rm =T) # computes the median height across lifespan
   ) %>%
   dplyr::ungroup()
@@ -171,9 +168,6 @@ ds %>% view_temporal_pattern("physact_med", 2)
 ds %>% view_temporal_pattern("physact", 2)
 
 
-
-
-
 # ---- describe-before-encoding --------------------------------------------------------------
 # if died==1, all subsequent focal_outcome==DEAD.
 # during debuggin/testing use only a few ids, for manipulation use all
@@ -187,16 +181,14 @@ ids <- c(33027) #,33027, 50101073, 6804844, 83001827 , 56751351, 13485298, 30597
 ds_long <- ds %>% 
   # dplyr::filter(id %in% ids) %>% # turn this off when using the entire sample
   dplyr::mutate(
-    age_at_bl    = as.numeric(age_bl),
-    age_at_death = as.numeric(age_death), 
     male      = as.logical(ifelse(!is.na(msex), msex=="1", NA_integer_)),
-    edu       = as.numeric(educ)
+    edu       = as.numeric(educ) # years of education
   ) %>% 
   dplyr::select_(.dots = c(
     "id"             # personal identifier
     ,"male"          # gender
     ,"edu"           # years of education
-    ,"age_bl"        # age at baseline
+    ,"age_at_bl"     # age at baseline
     ,"age_at_death"  # age at death
     ,"died"          # death indicator
     ,"birth_year"    # year of birth 
@@ -204,6 +196,7 @@ ds_long <- ds %>%
     ,"bmi_med"       # Body Mass Index, median across observed across lifespan
     ,"physact_med"   # Physical activity, median across observed across lifespan
     # time-invariant above
+    ,"wave"          # Follow-up year --- --- --- --- --- --- --- --- --- ---
     ,"fu_year"       # Follow-up year --- --- --- --- --- --- --- --- --- ---
     # time-variant below
     ,"date_at_visit" # perturbed date of visit
@@ -212,10 +205,11 @@ ds_long <- ds %>%
     ,"cogn_global"   # global cognition
     ,"dementia"      # dementia diagnosis (?)
     ,"gait"          # Gait Speed in minutes per second (min/sec)
-    ,"grip"          # Extremity strengtg in pounds (lbs)
+    ,"grip"          # Extremity strength in pounds (lbs)
     ,"htm"           # height in meters
     ,"bmi"           # Body Mass Index  in kilograms per meter squared (kg/msq)
     ,"physact"       # Physical activity (sum of 5 items)
+    ,"firstobs"      # indicator of first observation for a person
   )
   )
 # save to disk for direct examination
@@ -227,24 +221,29 @@ ds_long %>%
   dplyr::filter(id %in% ids) %>% 
   print()
 
+
+# ---- save-to-disk ------------------------------------------------------------
+# Save as a compressed, binary R dataset.  
+# It's no longer readable with a text editor, but it saves metadata (eg, factor information).
+dto[["tuned"]] <- ds_long
+saveRDS(dto, file=path_output, compress="xz")
+
+names(dto)
+
 # ---- attrition-effect ------------------------------
-t <- table(ds_long[,"fu_year"], ds_long[,"died"]); t[t==0]<-".";t
+# how many dead subjects do we have at each wave?
+# t <- table(ds_long$wave, ds_long$died); t[t==0]<-".";t
+# not clear, re-write
+
+# ---- select-sample ----------------------
+# create a sample id to use in probing and testing
+sample_ids <- sample(unique(ds_long$id), size = 100, replace = FALSE )
+
+# ----- sample-trajectories ----------------------
+ds_long %>% dplyr::filter(id %in% sample_ids) %>% raw_smooth_lines("mmse")
+ds_long %>% dplyr::filter(id %in% sample_ids) %>% raw_smooth_lines("gait")
+ds_long %>% dplyr::filter(id %in% sample_ids) %>% raw_smooth_lines("grip")
+ds_long %>% dplyr::filter(id %in% sample_ids) %>% raw_smooth_lines("htm")
+ds_long %>% dplyr::filter(id %in% sample_ids) %>% raw_smooth_lines("bmi")
 
 
-# ----- mmmse-trajectories ----------------------
-# raw_smooth_lines(ds_long, "mmse")
-
-
-
-# ---- add-firstobs-flag -----------------------------
-(N  <- length(unique(ds_ms$id)))
-subjects <- as.numeric(unique(ds_ms$id))
-# Add first observation indicator
-# this creates a new dummy variable "firstobs" with 1 for the first wave
-cat("\nFirst observation indicator is added.\n")
-offset <- rep(NA,N)
-for(i in 1:N){offset[i] <- min(which(ds_ms$id==subjects[i]))}
-firstobs <- rep(0,nrow(ds_ms))
-firstobs[offset] <- 1
-ds_ms <- cbind(ds_ms ,firstobs=firstobs)
-print(head(ds_ms))

@@ -95,29 +95,30 @@ ds_renamings <-
 names(ds) <- ds_renamings$renamed
 ds %>% dplyr::glimpse()
 
-# transfer changes to dto
-ds <- ds %>% dplyr::filter(study == "MAP ") # in case we have multiple studies (not really relevant here)
-table(ds$study) # should be only one study
-dto[["unitData"]] <- ds
-
+# in case we have multiple studies (not really relevant here but keep for thouroughness)
+ds <- ds %>% dplyr::filter(study == "MAP ") 
 
 # ----- tweak-data -----------------------
 # apply general tweaks on  unit data
 ds <- ds 
 
 # ---- assemble-data-object-dto-1 --------------------------------------
-# reconstruct the dto to be used in this project
+# reconstruct the dto to be used further down the pipeline
+ds_raw <- dto$unitData # save for assembly
 dto <- list()
-# the first element of data transfer object contains unit data
-dto[["unitData"]] <- ds
-# the second element of data transfer object contains meta data
-dto[["metaData"]] <-  meta_data # new, local meta-data!!, disable if using original metadata
+# the first element of data transfer object contains raw unit data
+dto[["raw"]] <- ds_raw # originally imported from the 
+# the second element of data transfer object contains meta data selected in this script
+dto[["meta"]] <-  meta_data_local # new, local meta-data
+dto[["greeted"]] <- ds
+
+names(dto)
 # verify and glimpse
-# dto[["unitData"]] %>% dplyr::glimpse()
-# dto[["metaData"]] %>% dplyr::glimpse()
+dto[["raw"]] %>% dplyr::glimpse()
+dto[["meta"]] %>% dplyr::glimpse()
+dto[["greeted"]] %>% dplyr::glimpse()
 
 # ---- save-to-disk ------------------------------------------------------------
-
 # Save as a compressed, binary R dataset.  
 # It's no longer readable with a text editor, but it saves metadata (eg, factor information).
 saveRDS(dto, file=path_output, compress="xz")
@@ -129,7 +130,7 @@ dto <- readRDS(path_output)
 names(dto)
 # 1st element - unit(person) level data
 # 2nd element - meta data, info about variables
-knitr::kable(names_labels(dto$unitData))
+knitr::kable(names_labels(dto$greeted))
 
 
 
