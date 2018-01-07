@@ -59,8 +59,9 @@ var_ms   <- c("id", "fu_year","age", "mmse","state" )
 cat("\n Demonstrate the mechanics of encoding states: \n")
 view_id(  
   ds_miss %>% dplyr::select_(.dots=var_miss), 
-  ds_ms%>% dplyr::select_(.dots=var_ms),  
-  ids) 
+  ds_ms %>% dplyr::select_(.dots=var_ms),  
+  ids
+  ) 
 
 # ---- remove-invalid-cases --------------------------------------------------------------
 ####### 1) Remove observations with missing age
@@ -135,6 +136,15 @@ names(dto$ms_mmse)
 saveRDS(dto,"./data/unshared/derived/2-dto.rds")
 # save clean data object for records and faster access
 # saveRDS(ds_clean, "./data/unshared/derived/ds_clean.rds")
+
+ 
+
+
+
+
+
+
+
 
 
 # subset a random sample of individuals if needed

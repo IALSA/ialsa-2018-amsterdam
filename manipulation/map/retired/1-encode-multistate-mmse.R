@@ -189,29 +189,29 @@ ds_long <- ds %>%
     edu       = as.numeric(educ)
   ) %>% 
   dplyr::select_(.dots = c(
-     "id"              # personal identifier
-    ,"male"            # gender
-    ,"edu"             # years of education
-    ,"age_bl"          # age at baseline
-    ,"age_at_death"    # age at death
-    ,"died"            # death indicator
-    ,"birth_year"      # year of birth 
-    ,"htm_med"         # height in meters, median across observed across lifespan
-    ,"bmi_med"         # Body Mass Index, median across observed across lifespan
-    ,"physact_med"     # Physical activity, median across observed across lifespan
-# time-invariant above
-    ,"fu_year" # Follow-up year --- --- --- --- --- --- --- --- --- ---
-# time-variant below
-    ,"date_at_visit"    # perturbed date of visit
-    ,"age_at_visit"     # age at cycle - fractional  
-    ,"mmse"             # mini mental state exam (max =30)
-    ,"cogn_global"      # global cognition
-    ,"dementia"         # dementia diagnosis (?)
-    ,"gait"             # Gait Speed in minutes per second (min/sec)
-    ,"grip"             # Extremity strengtg in pounds (lbs)
-    ,"htm"              # height in meters
-    ,"bmi"              # Body Mass Index  in kilograms per meter squared (kg/msq)
-    ,"physact"          # Physical activity (sum of 5 items)
+    "id"             # personal identifier
+    ,"male"          # gender
+    ,"edu"           # years of education
+    ,"age_bl"        # age at baseline
+    ,"age_at_death"  # age at death
+    ,"died"          # death indicator
+    ,"birth_year"    # year of birth 
+    ,"htm_med"       # height in meters, median across observed across lifespan
+    ,"bmi_med"       # Body Mass Index, median across observed across lifespan
+    ,"physact_med"   # Physical activity, median across observed across lifespan
+    # time-invariant above
+    ,"fu_year"       # Follow-up year --- --- --- --- --- --- --- --- --- ---
+    # time-variant below
+    ,"date_at_visit" # perturbed date of visit
+    ,"age_at_visit"  # age at cycle - fractional  
+    ,"mmse"          # mini mental state exam (max =30)
+    ,"cogn_global"   # global cognition
+    ,"dementia"      # dementia diagnosis (?)
+    ,"gait"          # Gait Speed in minutes per second (min/sec)
+    ,"grip"          # Extremity strengtg in pounds (lbs)
+    ,"htm"           # height in meters
+    ,"bmi"           # Body Mass Index  in kilograms per meter squared (kg/msq)
+    ,"physact"       # Physical activity (sum of 5 items)
     )
 )
 # save to disk for direct examination
@@ -240,51 +240,81 @@ determine_censor <- function(x, is_right_censored){
   )
 }
 
-# create file with missing information
-make_ds_miss <- function(
-  d,
-  variable
-){
-  d_long <- d %>% 
-    dplyr::mutate_(
-      "target" = variable
-    ) %>% 
-    as.data.frame()
+# new way
+# # create file with missing information
+# make_ds_miss <- function(
+#   d,
+#   variable
+# ){
+#   d_long <- d %>% 
+#     dplyr::mutate_(
+#       "target" = variable
+#     ) %>% 
+#     as.data.frame()
+# 
+#   (N <- length(unique(d_long$id))) # sample size
+#   subjects <- as.numeric(unique(d_long$id)) # list the ids
+#   
+#   for(i in 1:N){
+#     # for(i in unique(ds$id)){  # use this line for testing
+#     # Get the individual data:
+#     (dta.i                  <- d_long[d_long$id==subjects[i],]) # select a single individual
+#     # (dta.i                <- d_long[d_long$id==6804844,]) # select a single individual # use this line for testing
+#     (dta.i                  <- as.data.frame(dta.i %>% dplyr::arrange(-age_at_visit))) # enforce sorting
+#     (dta.i$missed_last_wave <- (cumsum(!is.na(dta.i$target))==0L)) # is the last obs missing?
+#     (dta.i$presumed_alive   <-  is.na(any(dta.i$age_at_death))) # can we presume subject alive?
+#     (dta.i$right_censored   <- dta.i$missed_last_wave & dta.i$presumed_alive) # right-censored?
+#     # dta.i$target_recoded    <- determine_censor(dta.i$target, dta.i$right_censored) # use when tracing
+#     (dta.i$target             <- determine_censor(dta.i$target, dta.i$right_censored)) # replace in reality
+#     (dta.i                  <- as.data.frame(dta.i %>% dplyr::arrange(age_at_visit)))
+#     (dta.i                  <- dta.i %>% dplyr::select(-missed_last_wave, -right_censored ))
+#     # Rebuild the data:
+#     if(i==1){d_miss <- dta.i}else{d_miss <- rbind(d_miss,dta.i)}
+#   } 
+#   # this part is not finished yet, need to make replacing the old variable 
+#   d_miss <- d_miss %>% 
+#     # drop original variable
+#     dplyr::mutate(
+#       mmse = target
+#     ) %>% 
+#     dplyr::select(-target)
+#   
+#   return(d_miss)
+# }
+# # usage 
+# ds_miss <- ds_long %>% make_ds_miss(variable = "mmse")
 
-  (N <- length(unique(d_long$id))) # sample size
-  subjects <- as.numeric(unique(d_long$id)) # list the ids
-  
-  for(i in 1:N){
-    # for(i in unique(ds$id)){  # use this line for testing
-    # Get the individual data:
-    (dta.i                  <- d_long[d_long$id==subjects[i],]) # select a single individual
-    # (dta.i                <- d_long[d_long$id==6804844,]) # select a single individual # use this line for testing
-    (dta.i                  <- as.data.frame(dta.i %>% dplyr::arrange(-age_at_visit))) # enforce sorting
-    (dta.i$missed_last_wave <- (cumsum(!is.na(dta.i$target))==0L)) # is the last obs missing?
-    (dta.i$presumed_alive   <-  is.na(any(dta.i$age_at_death))) # can we presume subject alive?
-    (dta.i$right_censored   <- dta.i$missed_last_wave & dta.i$presumed_alive) # right-censored?
-    # dta.i$target_recoded    <- determine_censor(dta.i$target, dta.i$right_censored) # use when tracing
-    (dta.i$target             <- determine_censor(dta.i$target, dta.i$right_censored)) # replace in reality
-    (dta.i                  <- as.data.frame(dta.i %>% dplyr::arrange(age_at_visit)))
-    (dta.i                  <- dta.i %>% dplyr::select(-missed_last_wave, -right_censored ))
-    # Rebuild the data:
-    if(i==1){d_miss <- dta.i}else{d_miss <- rbind(d_miss,dta.i)}
-  } 
-  
-  d_miss <- d_miss %>% 
-    dplyr::mutate_(
-      variable = "target"
-    ) %>% 
-    dplyr::select(-target)
-  
-  return(d_miss)
-}
-# usage 
-ds_miss <- ds_long %>% make_ds_miss(variable = "mmse")
-ds_miss <- ds_long %>% make_ds_miss(variable = "gait")
-ds_miss <- ds_long %>% make_ds_miss(variable = "grip")
 
-ds_long %>% dplyr::glimpse()
+# old way
+(N <- length(unique(ds_long$id))) # sample size
+subjects <- as.numeric(unique(ds_long$id)) # list the ids
+# ds_long_temp <- ds_long
+# i <- 5; 
+for(i in 1:N){
+  # for(i in unique(ds$id)){  # use this line for testing
+  # Get the individual data:
+  # ds_long <- ds_long_temp %>% 
+  #   dplyr::select(id, fu_year, age_at_visit,died, age_death, mmse) %>% 
+  #   as.data.frame()
+  (dta.i                  <- ds_long[ds_long$id==subjects[i],]) # select a single individual
+  # (dta.i                <- ds_long[ds_long$id==6804844,]) # select a single individual # use this line for testing
+  (dta.i                  <- as.data.frame(dta.i %>% dplyr::arrange(-age_at_visit))) # enforce sorting
+  (dta.i$missed_last_wave <- (cumsum(!is.na(dta.i$mmse))==0L)) # is the last obs missing?
+  (dta.i$presumed_alive   <-  is.na(any(dta.i$age_at_death))) # can we presume subject alive?
+  # (dta.i$presumed_alive <-  is.na(any(dta.i$age_death))) # can we presume subject alive?
+  (dta.i$right_censored   <- dta.i$missed_last_wave & dta.i$presumed_alive) # right-censored?
+  # dta.i$mmse_recoded    <- determine_censor(dta.i$mmse, dta.i$right_censored) # use when tracing
+  (dta.i$mmse             <- determine_censor(dta.i$mmse, dta.i$right_censored)) # replace in reality
+  (dta.i                  <- as.data.frame(dta.i %>% dplyr::arrange(age_at_visit)))
+  (dta.i                  <- dta.i %>% dplyr::select(-missed_last_wave, -right_censored ))
+  # Rebuild the data:
+  if(i==1){ds_miss <- dta.i}else{ds_miss <- rbind(ds_miss,dta.i)}
+} 
+# inspect crated data object
+ds_miss %>% 
+  dplyr::filter(id %in% ids) %>% 
+  print()
+# ds_long %>% dplyr::glimpse()
 
 # ---- encode-multi-states ------------------------------
 encode_multistates <- function(
