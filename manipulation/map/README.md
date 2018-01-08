@@ -2,4 +2,4 @@ This folder contains manipulation and estimation scripts of the study, after whi
 
 # Chain of custody
 
-<img src="libs/images/support/chain-of-custody.jpg" width="900px" /> 
+<img src="blob/master/libs/images/support/chain-of-custody.jpg" width="900px" /> 
