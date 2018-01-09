@@ -6,9 +6,9 @@ rm(list=ls(all=TRUE))  #Clear the variables from previous runs.
 # ---- load-sources ------------------------------------------------------------
 # Call `base::source()` on any repo file that defines functions needed below.  Ideally, no real operations are performed.
 source("./scripts/functions-common.R") # used in multiple reports
-source("./scripts/graph-presets.R") # fonts, colors, themes
-source("./scripts/graph-general.R")
-source("./scripts/graph-specific.R")
+source("./scripts/graph-presets.R")    # fonts, colors, themes
+source("./scripts/graph-general.R")    # simple, elemental displays
+source("./scripts/graph-specific.R")   # complex, composite displays
 # ---- load-packages -----------------------------------------------------------
 # Attach these packages so their functions don't need to be qualified: http://r-pkgs.had.co.nz/namespace.html#search-path
 library(magrittr) #Pipes

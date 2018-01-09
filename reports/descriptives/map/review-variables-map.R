@@ -6,56 +6,55 @@ cat("\f") # clear console
 # ---- load-sources ------------------------------------------------------------
 # Call `base::source()` on any repo file that defines functions needed below.  Ideally, no real operations are performed.
 source("./scripts/functions-common.R") # used in multiple reports
-source("./scripts/graph-presets.R") # fonts, colors, themes
-source("./scripts/graph-general.R")
-source("./scripts/graph-specific.R")
+source("./scripts/graph-presets.R")    # fonts, colors, themes
+source("./scripts/graph-general.R")    # simple, elemental displays
+source("./scripts/graph-specific.R")   # complex, composite displays
 
 
 # ---- load-packages -----------------------------------------------------------
 # Attach these packages so their functions don't need to be qualified: http://r-pkgs.had.co.nz/namespace.html#search-path
 library(magrittr) # enables piping : %>% 
-library(knitr)
-library(dplyr)
-# Verify these packages are available on the machine, but their functions need to be qualified: http://r-pkgs.had.co.nz/namespace.html#search-path
+library(knitr)    # enable better tables
+# Verify these packages are available on the machine, 
+# but their functions need to be qualified: http://r-pkgs.had.co.nz/namespace.html#search-path
 requireNamespace("ggplot2") # graphing
-# requireNamespace("readr") # data input
 requireNamespace("tidyr") # data manipulation
 requireNamespace("dplyr") # Avoid attaching dplyr, b/c its function names conflict with a lot of packages (esp base, stats, and plyr).
 requireNamespace("testit")# For asserting conditions meet expected patterns.
-# requireNamespace("car") # For it's `recode()` function.
 
 # ---- declare-globals ---------------------------------------------------------
 path_input <- "./data/unshared/derived/dto-3-valid.rds"
-
 # estimated models (will be) stored  here
-path_input_models <- "./data/unshared/derived/models/ds_estimation.rds"
+path_input_ds_estimation <- "./data/unshared/derived/models/ds_estimation.rds"
 
-options(
-  origin="1970-01-01"
-)
 
 # ---- load-data ---------------------------------------------------------------
-dto <- readRDS(path_input)
-names(dto)
+dto <- readRDS(path_input) 
 # 1st element - dto$raw     - raw data, as obtained from ialsa-study-curator for RUSH-MAP study
 # 2nd element - dto$meta    - meta data, info about variables
-# 3rd element - dto$greeted - data produced by the greeter script
-# 4th element - dto$tuned   - data produced by the tuner script
-# 5th element - dto$encoded - data produced by the encoder script
-names(dto$encoded) # is a list consisting of three data frames representing encoding steps
-# dto$encoded$missing    # data after encoding missing states (-1, -2)
-# dto$encoded$multistate # data after encoding multistates (1,2,3,4)
-# dto$encoded$corrected  # data after correcting for longitudinal values
-# 6th element - dto$valid   - data produced by the first half of modeler script
-# contains only valid case that have PERMITTED to be entering the estimation routine
-# however, that ACTUALLY entered estimation is preserved immediately before msm call
+# 3rd element - dto$greeted - dataset produced by the greeter script
+# 4th element - dto$tuned   - dataset produced by the tuner script
+# 5th element - dto$encoded - dataset produced by the encoder script
+   # dto$encoded is a list consisting of three data frames representing encoding steps
+   # dto$encoded$missing    # dataset after encoding missing states (-1, -2)
+   # dto$encoded$multistate # dataset after encoding multistates (1,2,3,4)
+   # dto$encoded$corrected  # dataset after correcting for longitudinal values
+# 6th element - dto$valid   - dataset produced by validator script
+# contains only valid case that have CLEARED to be entering the estimation routine
+# however, that actually ENTERED model estimation is preserved immediately before msm call
+# and stored along side model estimation results (produced by the first part of the `modeler` script):
+ds_estimation <- readRDS(path_input_ds_estimation) 
+# review locations
+print(path_input)
+print(path_input_ds_estimation)
+names(dto) # inspect componets in the data transfer object (dto)
+names(dto$encoded) # phases of the encoding procedure
+# create aliases for quick access
+# full version of data before any subsetting, filtering or transformations
+ds_greeted <- dto$greeted %>% tibble::as_tibble()
+# prepared for modeling, only valid cases. all variables needed in place.
+ds_valid   <- dto$valid %>% tibble::as_tibble()
 
-
-# full version of data before any subsetting or filtering
-ds0           <-dto$greeted %>% tibble::as_tibble()
-# import data set used for modeling
-ds_valid      <- dto$valid %>% tibble::as_tibble()
-ds_estimation <- readRDS(path_input_models)
 
 # ---- meta-table --------------------------------------------------------
 dto$meta %>%  
@@ -70,34 +69,30 @@ dto$meta %>%
 
   
 
-# ---- inspect-data -------------------------------------------------------------
-dto$greeted %>% dplyr::glimpse()
+# ---- inspect-data-1 -------------------------------------------------------------
 # this is how we can interact with the `dto` to call and graph data and metadata
 dto$meta %>% 
   dplyr::filter(type=="demographic") %>% 
   dplyr::select(name,name_new,label)
 
+dto$valid %>% dplyr::glimpse(90)
 
-# ---- tweak-data --------------------------------------------------------------
-# create a subset of
-# observations - only those used in statistical models
-# identify the individuals used for modeling
+# ---- inspect-data-2 -------------------------------------------------------------
+# identifiy the difference between eligible cases and those used in estimation (2 steps):
+# identify cases CLEARED for modeling
 valid_ids <- 
-  # dto[["ms_mmse"]][["model"]] %>% 
   dto$valid %>% 
   dplyr::distinct(id) %>% 
-  as.list() %>% 
-  unlist() %>% 
-  as.vector()
+  as.list() %>% unlist() %>% as.vector()
+
 valid_ids %>% length()
 
-
+# identify cases USED in estimation
 modeled_ids <- 
   ds_estimation %>% 
   dplyr::distinct(id) %>% 
-  as.list() %>% 
-  unlist() %>% 
-  as.vector()
+  as.list() %>% unlist() %>% as.vector()
+
 modeled_ids %>% length()
 
 # Has the model in question used all legal cases?
@@ -111,27 +106,34 @@ modeled_ids %>% length()
 (n_valid - n_modeled)
 # eligible cases from the dto$valid state of the data
 
+# ---- tweak-data --------------------------------------------------------------
 # variablables - only those relevant to the research question
+# listing variables is useful to remind the contents and update the order
+# this listing was adapted from the initial mention in `1-tuner-map.R`
 ds <- dto$valid %>% 
   dplyr::filter(id %in% modeled_ids) %>% 
+  dplyr::mutate_(
+    "age_at_visit" = "age" # `msm` required this variable to have standard name `age`
+  ) %>% 
   dplyr::select_(
     "id"             # personal identifier
     ,"male"          # gender
     ,"edu"           # years of education
-    ,"age_at_bl"     # age at baseline
-    ,"age_at_death"  # age at death
-    ,"died"          # death indicator
-    ,"birth_year"    # year of birth 
-    ,"htm_med"       # height in meters, median across observed across lifespan
-    ,"bmi_med"       # Body Mass Index, median across observed across lifespan
+    ,"htm_med"       # height in meters,  median across observed across lifespan
+    ,"bmi_med"       # Body Mass Index,   median across observed across lifespan
     ,"physact_med"   # Physical activity, median across observed across lifespan
+    ,"birth_year"    # year of birth 
+    ,"died"          # death indicator
+    ,"age_at_death"  # age at death
+    ,"age_at_bl"     # age at baseline
     # time-invariant above
     ,"wave"          # Follow-up year --- --- --- --- --- --- --- --- --- ---
     ,"fu_year"       # Follow-up year --- --- --- --- --- --- --- --- --- ---
     # time-variant below
     ,"firstobs"      # indicator of first observation for a person
     ,"date_at_visit" # perturbed date of visit
-    ,"age"           # age at cycle - fractional  (previously `age_at_visit`)
+    ,"age_at_visit"  # age at cycle - fractional  
+    ,"age"           # same as above, but standardized name for `msm` consumption
     ,"htm"           # height in meters
     ,"bmi"           # Body Mass Index  in kilograms per meter squared (kg/msq)
     ,"physact"       # Physical activity (sum of 5 items)
@@ -141,25 +143,78 @@ ds <- dto$valid %>%
     ,"dementia"      # dementia diagnosis (?)
     ,"mmse"          # mini mental state exam (max =30)
     ,"state"         # multistate variable created for model
-  )
+  ) 
+
+
+# ---- inspect-data-3 -----------------------------------------
 head(ds)
-ds %>% distinct(id) %>% count()
-# ds$id %>% unique() %>% length() # alt
-ds %>% glimpse()
-ds %>% filter(id==9121) %>% as.data.frame()
+ds$id %>% unique() %>% length() # number of unique ids in ds
+ds %>% dplyr::glimpse(90)
+ds %>% dplyr::filter(id==33027) %>% as.data.frame()
+ds %>% dplyr::filter(id==402800) %>% as.data.frame()
 
 # subset a smaller cohort for testing
 set.seed(41)
 sample_size <- 100
 ids <- sample(ds$id,sample_size)
-d <- ds %>% dplyr::filter(id %in% ids) 
+# d <- ds %>% dplyr::filter(id %in% ids) 
+# ds <- ds %>% dplyr::filter(id %in% ids) 
 
 # ---- basic-table --------------------------------------------------------------
 
 # ---- basic-graphs --------------------------------------------------------------
-ds0 %>% histogram_continuous("age_death", bin_width=1)
 
-ds0 %>% histogram_discrete("msex")
+# ---- age-1 ----------------------------------------------------------------
+ds %>% histogram_continuous("birth_year", bin_width=1)
+
+ds %>% dplyr::distinct(id,died) %>% histogram_discrete("died")
+
+ds %>% histogram_continuous("age_at_death", bin_width=1)
+
+ds %>% histogram_continuous("age_at_bl", bin_width=1)
+
+
+# ---- age-1-composition -----------
+# Time intervals in data:
+# the age difference between timepoint for each individual
+intervals <- matrix(NA,nrow(ds),2)
+for(i in 2:nrow(ds)){
+  if(ds$id[i]==ds$id[i-1]){
+    intervals[i,1] <- ds$id[i]
+    intervals[i,2] <- ds$age[i]-ds$age[i-1]
+  }
+  intervals <- as.data.frame(intervals)
+  colnames(intervals) <- c("id", "interval")
+}
+cat("\n Minimum interval length : ",min(intervals[,2], na.rm=T))
+cat("\n Maximum interval length : ", max(intervals[,2], na.rm=T))
+# the age difference between timepoint for each individual
+intervals <- intervals[!is.na(intervals[,2]),] # Remove NAs:
+cat("\nTime intervals between observations within individuals:\n")
+print(round(quantile(intervals[,2]),digits))
+
+# Info on age and time between observations:
+cat("\n Graphs of age distribution :\n")
+opar<-par(mfrow=c(1,3), mex=0.8,mar=c(5,5,3,1))
+hist(ds$age[ds$firstobs==1],col="red",xlab="Age at baseline in years",main="")
+hist(ds$age,col="blue",xlab="Age in data in years",main="")
+hist(intervals[,2],col="green",xlab="Time intervals in data in years",main="")
+opar<-par(mfrow=c(1,1), mex=0.8,mar=c(5,5,2,1))
+
+
+# ---- gait-1 ---------------------------------------------
+# distribution of scores at baseline
+ds %>% 
+  dplyr::filter(fu_year == 0) %>% 
+  TabularManifest::histogram_continuous("gait")
+# distribution over time
+raw_smooth_lines_v2(ds, "gait")
+
+
+# ----- test ----------
+ds %>% histogram_continuous("age_at_death", bin_width=1)
+
+ds %>% histogram_discrete("msex")
 
 # print an elemental graph
 d %>% basic_line_v2("cogn_global", "fu_year", "salmon", .9, .1, T)
@@ -231,20 +286,20 @@ g
 
 # ---- print-time-variant ---------------------------------
 print_these <- c(
-  "mmse",           
-  "cogn_global",    
-  "dementia",       
-  "income_40",      
-  "cogact_old",     
-  "socact_old",     
-  "soc_net",        
-  "social_isolation"
+   "htm"           # height in meters
+  ,"bmi"           # Body Mass Index  in kilograms per meter squared (kg/msq)
+  ,"physact"       # Physical activity (sum of 5 items)
+  ,"gait"          # Gait Speed in minutes per second (min/sec)
+  ,"grip"          # Extremity strength in pounds (lbs)
+  ,"cogn_global"   # global cognition
+  ,"dementia"      # dementia diagnosis (?)
+  ,"mmse"          # mini mental state exam (max =30)
 )
 for(i in print_these){
   cat("\n")
   cat("\n## ", i)
   i <- "mmse"
-  label <- ds_meta %>% 
+  label <- dto$meta %>% 
     dplyr::filter(name_new == i) %>% 
     dplyr::select(name_new, label, url)
   cat("\nVariable name: ", label$name_new)
@@ -255,6 +310,9 @@ for(i in print_these){
   d %>% raw_smooth_lines_v2(i) %>% print()
   cat("\n")
 }
+
+
+
 
 # ---- publish ---------------------------------------
 path_report_1 <- "./reports/descriptives/map/review-variables-map.Rmd"
@@ -280,7 +338,7 @@ for( pathFile in pathFilesToBuild ) {
 
 
 # ---- B-1-N-at-each-wave -------------------------------------------------------
-ds %>% dplyr::filter(name=="fu_year")
+# ds %>% dplyr::filter(name=="fu_year")
 ds %>% 
   dplyr::group_by_("fu_year") %>%
   dplyr::summarize(sample_size=n())
@@ -315,7 +373,7 @@ g <- basic_line(d, "cogn_global", "fu_year", "salmon", .9, .1, T)
 
 
 # ----- B-2-cognitive-5-cogn_global -----------------------
-raw_smooth_lines_v2(d, "cogn_global")
+raw_smooth_lines_v2(ds, "cogn_global")
 
 # ----- B-2-cognitive-5-cogn_se -----------------------
 raw_smooth_lines_v2(d, "cogn_se")
@@ -336,50 +394,49 @@ raw_smooth_lines_v2(d, "cogn_ps")
 raw_smooth_lines_v2(d, "cogn_ps")
 
 # ----- B-2-cognitive-5-mmse -----------------------
-raw_smooth_lines_v2(d, "mmse")
+raw_smooth_lines_v2(ds, "mmse")
 
 
 
 
 
 # ----- B-3-dementia-diagnosis -------------------------------------------------
-dto[["metaData"]] %>% dplyr::filter(name=="dementia")
+# dto$meta %>% dplyr::filter(name=="dementia")
 
-ds <- dto[["unitData"]] %>% 
+dd <- ds %>% 
   dplyr::filter(!is.na(dementia)) %>% 
   dplyr::group_by_("fu_year") %>% 
   dplyr::summarize(percent_diagnosed=mean(dementia),
                    observed_n = n()) 
-ds
+dd
 
-g <- ggplot2::ggplot(ds, aes_string(x="fu_year",y="percent_diagnosed")) 
+g <- ggplot2::ggplot(dd, aes_string(x="fu_year",y="percent_diagnosed")) 
 g <- g + geom_line(na.rm = T)
 g <- g + main_theme
 g
   
-ds <- dto[["unitData"]] %>% 
+dd <- ds %>% 
   dplyr::filter(!is.na(dementia)) %>% 
   dplyr::mutate(age_cat = cut(age_at_visit,breaks = 10)) %>% 
   dplyr::group_by_("age_cat") %>%
   dplyr::summarize(percent_diagnosed=mean(dementia),
                    observed_n = n())  
-ds
+dd
 
-  
-  g <- ggplot2::ggplot(ds, aes_string(x="age_cat",y="percent_diagnosed")) 
-  g <- g + geom_bar(stat="identity")
-  g <- g + main_theme
-  g
+g <- ggplot2::ggplot(dd, aes_string(x="age_cat",y="percent_diagnosed")) 
+g <- g + geom_bar(stat="identity")
+g <- g + main_theme
+g
   
 
 # ---- B-4-education -----------------------------------------------------------
-dto[["metaData"]] %>% dplyr::filter(name=="educ")
+# dto$meta %>% dplyr::filter(name=="educ")
 # shows attrition in each education group
-dto[["unitData"]] %>% 
-  dplyr::filter(!is.na(educ)) %>% 
+ds %>% 
+  dplyr::filter(!is.na(edu)) %>% 
   dplyr::group_by_("fu_year") %>% 
-  dplyr::summarize(average_years_edu=mean(educ),
-                   SD=sd(educ),
+  dplyr::summarize(average_years_edu=mean(edu),
+                   SD=sd(edu),
                    observed_n = n())
 
 
@@ -391,9 +448,9 @@ dto[["unitData"]] %>%
 
 # ---- B-6-bmi -----------------------------------------------------------
 
-dto[["metaData"]] %>% dplyr::filter(name %in% c("bmi","wtkg", "htm"))
+# dto$meta %>% dplyr::filter(name %in% c("bmi","wtkg", "htm"))
 # descriptives by follow-up year
-dto[["unitData"]] %>% 
+ds %>% 
   dplyr::filter(!is.na(bmi)) %>% 
   dplyr::group_by_("fu_year") %>% 
   dplyr::summarize(average_bmi=mean(bmi),

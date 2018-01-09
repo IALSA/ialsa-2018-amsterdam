@@ -201,33 +201,33 @@ names(dto)
 
 
 
-# ---- describe-age-composition -----------
-# Time intervals in data:
-# the age difference between timepoint for each individual
-intervals <- matrix(NA,nrow(ds_valid),2)
-for(i in 2:nrow(ds_valid)){
-  if(ds_valid$id[i]==ds_valid$id[i-1]){
-    intervals[i,1] <- ds_valid$id[i]
-    intervals[i,2] <- ds_valid$age[i]-ds_valid$age[i-1]
-  }
-  intervals <- as.data.frame(intervals)
-  colnames(intervals) <- c("id", "interval")
-}
-cat("\n Minimum interval length : ",min(intervals[,2], na.rm=T))
-cat("\n Maximum interval length : ", max(intervals[,2], na.rm=T))
-# the age difference between timepoint for each individual
-intervals <- intervals[!is.na(intervals[,2]),] # Remove NAs:
-cat("\nTime intervals between observations within individuals:\n")
-print(round(quantile(intervals[,2]),digits))
-
-# Info on age and time between observations:
-cat("\n Graphs of age distribution :\n")
-opar<-par(mfrow=c(1,3), mex=0.8,mar=c(5,5,3,1))
-hist(ds_valid$age[ds_valid$firstobs==1],col="red",xlab="Age at baseline in years",main="")
-hist(ds_valid$age,col="blue",xlab="Age in data in years",main="")
-hist(intervals[,2],col="green",xlab="Time intervals in data in years",main="")
-opar<-par(mfrow=c(1,1), mex=0.8,mar=c(5,5,2,1))
-
+# # ---- describe-age-composition -----------
+# # Time intervals in data:
+# # the age difference between timepoint for each individual
+# intervals <- matrix(NA,nrow(ds_valid),2)
+# for(i in 2:nrow(ds_valid)){
+#   if(ds_valid$id[i]==ds_valid$id[i-1]){
+#     intervals[i,1] <- ds_valid$id[i]
+#     intervals[i,2] <- ds_valid$age[i]-ds_valid$age[i-1]
+#   }
+#   intervals <- as.data.frame(intervals)
+#   colnames(intervals) <- c("id", "interval")
+# }
+# cat("\n Minimum interval length : ",min(intervals[,2], na.rm=T))
+# cat("\n Maximum interval length : ", max(intervals[,2], na.rm=T))
+# # the age difference between timepoint for each individual
+# intervals <- intervals[!is.na(intervals[,2]),] # Remove NAs:
+# cat("\nTime intervals between observations within individuals:\n")
+# print(round(quantile(intervals[,2]),digits))
+# 
+# # Info on age and time between observations:
+# cat("\n Graphs of age distribution :\n")
+# opar<-par(mfrow=c(1,3), mex=0.8,mar=c(5,5,3,1))
+# hist(ds_valid$age[ds_valid$firstobs==1],col="red",xlab="Age at baseline in years",main="")
+# hist(ds_valid$age,col="blue",xlab="Age in data in years",main="")
+# hist(intervals[,2],col="green",xlab="Time intervals in data in years",main="")
+# opar<-par(mfrow=c(1,1), mex=0.8,mar=c(5,5,2,1))
+# 
 
 
 

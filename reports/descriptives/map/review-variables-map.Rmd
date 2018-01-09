@@ -1,8 +1,8 @@
 ---
-title: "MAP: initial variable review"
+title: "Review variables: MAP"
 output:
   html_document:
-    css: ~/GitHub/ialsa-2017-amsterdam/libs/css/sidebar.css
+    css: ~/GitHub/ialsa/ialsa-2018-amsterdam/libs/css/sidebar.css
     keep_md: yes
     toc: yes
 ---
@@ -16,8 +16,8 @@ output:
   library(knitr)
 # Rmd is in "./reports/reportA/reportA.Rmd", but now the root is "./"
   knitr::opts_knit$set(root.dir='../../../') 
+  # getwd()
 ```
-
 <!--  The 2nd mandatory chunck  -->
 <!-- Set the report-wide options, and point to the external code file. -->
 ```{r set_options, echo=F}
@@ -38,6 +38,7 @@ opts_chunk$set(
   # dev = "pdf"#,
   # dev.args=list(pdf = list(colormodel = 'cmyk'))
 )
+# echoChunks <- TRUE
 echoChunks <- FALSE
 options(width=120) #So the output is 50% wider than the default.
 # connect to the file with the underlying R script  
@@ -65,42 +66,65 @@ read_chunk("./reports/descriptives/map/review-variables-map.R")
 #Put code in here.  It doesn't call a chunk in the codebehind file.
 ```
 
+
+
+In this report we review the variables in the Memory and Aging Project (MAP) study of RUSH Institute.
+
 # (I) Exposition
 
-> This report is a record of interaction with a data transfer object (dto) produced by `./manipulation/map/0-ellis-island-map.R`. 
+This report is a record of interaction with a data transfer object (dto) produced by sequence of scripts  
 
-The next section recaps this script, exposes the architecture of the DTO, and demonstrates the language of interacting with it.   
+- `./manipulation/map/0-greeter-map.R`   
+- `./manipulation/map/1-tuner-map.R`   
+- `./manipulation/map/2-encoder-map.R`   
+- `./manipulation/map/3-validator-map.R`   
 
-## (I.A) Ellis Island
+Their roles are described in the following chain of custody:
 
-> All data land on Ellis Island.
+<img src="../../../libs/images/support/chain-of-custody-map.jpg" width="900px" /> 
 
-The script `0-ellis-island.R` is the first script in the analytic workflow. It accomplished the following: 
 
-- (1) Reads in raw data file
-- (2) Extract, combines, and exports metadata (specifically, variable names and labels, if provided) into `./data/shared/meta/map/names-labels-live.csv`, which is updated every time Ellis Island script is executed.   
-- (3) Augments raw metadata with instructions for renaming and classifying variables. The instructions are provided as manually entered values in `./data/shared/meta/map/meta-data-map.csv`. They are used by automatic scripts in later manipulation and analysis.  
-- (4) Combines unit and meta data into a single DTO to serve as a starting point to all subsequent analyses.   
+## Overview of objects  
 
+Let us review the data objects in this chain of custody. We will mostly use the `dto$valid` dataset, as the one containing all (and only) necessary variable for our modeling exercise and only those cases/subjects that were considered eligible from the data quality perspective. 
 
 <!-- Load the datasets.   -->
 ```{r load-data, echo=T, results='show', message=FALSE}
 ```
 
-### Meta
-```{r meta-table, echo=TRUE, results='show', message=FALSE}
+## Meta
+
+The `dto` contains the meta data set, descrdibing the existing variables. This spreadsheet is the means by which variables are studied, classified, described, and annotated.  The process of applying this meta data file to alter the `raw` form is described in the `./manipulation/map/0-greeter-map.R` script.
+
+```{r meta-table, echo=FALSE, results='show', message=FALSE}
 ```
 
+## How to interact
 
+Now that the full chain of custody is loaded into our analytic environment, we can demonstrate some of the ways we can interact with `dto` to set the stage for data visualization to follow. 
 <!-- Inspect the datasets.   -->
-```{r inspect-data, echo=echoChunks, results='show', message=FALSE}
+```{r inspect-data-1, echo=T, results='show', message=FALSE, eval=F}
 ```
 
+## A few basic Qs
+
+> What is the difference between `dto$valid` and `ds_estimation`? 
+
+If all elibible cases (from perspective of data cleanliness) are employed during estimation, these two data sets should have the same cases.
+
+```{r inspect-data-2, echo=T, results='show', message=FALSE}
+```
+
+## Contents 
+
+To be explicit about the content of the focal data set for this report, we list its geneology and local transformations in the following call. 
 <!-- Tweak the datasets.   -->
-```{r tweak-data, echo=echoChunks, results='show', message=FALSE}
+```{r tweak-data, echo=T, results='show', message=FALSE}
 ```
 
-
+Now that the `valid` data set is loaded up into our environment and we understand its relationship to `ds_estimation` we can look at what data displays for individual cases.  
+```{r inspect-data-3, echo=T, results='show', message=FALSE}
+```
 
 <!-- Basic table view.   -->
 ```{r basic-table, echo=TRUE, results='show', message=FALSE}
@@ -111,7 +135,40 @@ The script `0-ellis-island.R` is the first script in the analytic workflow. It a
 ```
 
 # (II) - Development
-```{r print-time-variant, echo=TRUE, results='show', message=FALSE}
+
+# Age
+
+```{r age-1, echo=TRUE, results='show', message=FALSE, eval=T}
 ```
+
+
+# Education
+```{r B-4-education, echo=TRUE, results='show', message=FALSE, eval=T}
+```
+
+# BMI
+```{r B-6-bmi, echo=TRUE, results='show', message=FALSE, eval=T}
+```
+
+# Cognition
+
+Let us review variables related to cognitive health.
+
+## Global cognition
+```{r B-2-cognitive-5-cogn_global, echo=TRUE, results='show', message=FALSE, eval=T}
+```
+
+## Dementia
+```{r B-3-dementia-diagnosis, echo=TRUE, results='show', message=FALSE, eval=T}
+```
+
+## MMSE
+```{r B-2-cognitive-5-mmse, echo=TRUE, results='show', message=FALSE, eval=T}
+```
+
+# Gait
+```{r gait-1, echo=TRUE, results='show', message=FALSE, eval=T}
+```
+
 
 # (III) - Recapitulation

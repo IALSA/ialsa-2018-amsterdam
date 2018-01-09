@@ -6,9 +6,9 @@ rm(list=ls(all=TRUE))  #Clear the variables from previous runs.
 # ---- load-sources ------------------------------------------------------------
 # Call `base::source()` on any repo file that defines functions needed below.  Ideally, no real operations are performed.
 source("./scripts/functions-common.R") # used in multiple reports
-source("./scripts/graph-presets.R") # fonts, colors, themes
-source("./scripts/graph-general.R")
-source("./scripts/graph-specific.R")
+source("./scripts/graph-presets.R")    # fonts, colors, themes
+source("./scripts/graph-general.R")    # simple, elemental displays
+source("./scripts/graph-specific.R")   # complex, composite displays
 # ---- load-packages -----------------------------------------------------------
 # Attach these packages so their functions don't need to be qualified: http://r-pkgs.had.co.nz/namespace.html#search-path
 library(magrittr) #Pipes
@@ -188,28 +188,28 @@ ds_long <- ds %>%
     "id"             # personal identifier
     ,"male"          # gender
     ,"edu"           # years of education
-    ,"age_at_bl"     # age at baseline
-    ,"age_at_death"  # age at death
-    ,"died"          # death indicator
-    ,"birth_year"    # year of birth 
     ,"htm_med"       # height in meters, median across observed across lifespan
     ,"bmi_med"       # Body Mass Index, median across observed across lifespan
     ,"physact_med"   # Physical activity, median across observed across lifespan
+    ,"birth_year"    # year of birth 
+    ,"died"          # death indicator
+    ,"age_at_death"  # age at death
+    ,"age_at_bl"     # age at baseline
     # time-invariant above
     ,"wave"          # Follow-up year --- --- --- --- --- --- --- --- --- ---
     ,"fu_year"       # Follow-up year --- --- --- --- --- --- --- --- --- ---
     # time-variant below
+    ,"firstobs"      # indicator of first observation for a person
     ,"date_at_visit" # perturbed date of visit
-    ,"age_at_visit"  # age at cycle - fractional  
-    ,"mmse"          # mini mental state exam (max =30)
-    ,"cogn_global"   # global cognition
-    ,"dementia"      # dementia diagnosis (?)
-    ,"gait"          # Gait Speed in minutes per second (min/sec)
-    ,"grip"          # Extremity strength in pounds (lbs)
+    ,"age_at_visit"  # age at cycle - fractional ( will be replaced by age for modeling in msms)  
     ,"htm"           # height in meters
     ,"bmi"           # Body Mass Index  in kilograms per meter squared (kg/msq)
     ,"physact"       # Physical activity (sum of 5 items)
-    ,"firstobs"      # indicator of first observation for a person
+    ,"gait"          # Gait Speed in minutes per second (min/sec)
+    ,"grip"          # Extremity strength in pounds (lbs)
+    ,"cogn_global"   # global cognition
+    ,"dementia"      # dementia diagnosis (?)
+    ,"mmse"          # mini mental state exam (max =30)
   )
   )
 # save to disk for direct examination
