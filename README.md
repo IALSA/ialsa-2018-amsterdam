@@ -2,10 +2,11 @@
 
 Mutistate models of physical decline: Coordinated analysis with replication across several longitudinal studies.
 
+([reproducible workflow described][how-to-reproduce])
+
 # Research Question
 
 > Is gait speed associated with transitions among cognitive states?
-
 
 # Model specification
 
@@ -22,3 +23,5 @@ The following online documents are developed collectively to serve as the basis 
 
 [meeting-journal]:https://docs.google.com/document/d/1LHnAU9Be693COvB0NJlyseifrnY0F9osLs1LWSGLXH4/edit?usp=sharing
 [fact-tables]:https://docs.google.com/document/d/1MjiRhF1veKZ2xaN085XAr83w4eSzWRrOFVDuGMEluA0/edit?usp=sharing
+
+[how-to-reproduce]:how-to-reproduce.md
