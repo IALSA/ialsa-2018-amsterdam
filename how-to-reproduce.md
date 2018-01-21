@@ -18,16 +18,13 @@ We devided the workflow into two stages. During the first stage (Chain of Custod
 
 ![chain-of-custody][chain-of-custody]  
 
-The data set for a  longitudinal study prepared by the respective     
-[ialsa-study-curator][ialsa-study-curator] enters the analytic environment of the    
+The data set for a  longitudinal study prepared by the respective [ialsa-study-curator][ialsa-study-curator] enters the analytic environment of the    
 [ialsa-2018-amsterdam][ialsa-2018-amsterdam] and meets the      
-[greeter][greeter] script, which adds custom meta-data and shapes the   
-_data transfer object_ (dto), which tracks all states of the data on its way to the estimated model (hence, "chain of custody" metaphor).    
-[tuner][tuner] script, which implements project-specific data transformation is then applied to create variables that could by used by the   
-[encoder][encoder] script to encode the multistate variable, pivotal for the `msm()` estimation call. Then    
-[validator][validator] script makes sure only valid cases (respondents) are selected  and passes to the    
-[modeler][modeler] script, which estimates the statistical model according the  
-[model-specification][model-a-spec] and saves the produced objects to local drive.   
+- 0.[greeter][greeter] script, which adds custom meta-data and shapes the _data transfer object_ (dto), which tracks all states of the data on its way to the estimated model (hence, "chain of custody" metaphor).    
+- 1.[tuner][tuner] script, which implements project-specific data transformation is then applied to create variables that could by used by the   
+- 2.[encoder][encoder] script to encode the multistate variable, pivotal for the `msm()` estimation call. Then    
+- 3.[validator][validator] script makes sure only valid cases (respondents) are selected  and passes to the    
+- 4.[modeler][modeler] script, which estimates the statistical model according the  [model-specification][model-a-spec] and saves the produced objects to local drive.   
 
 
 ## Model evaluation
