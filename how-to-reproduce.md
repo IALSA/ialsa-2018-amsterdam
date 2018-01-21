@@ -1,4 +1,4 @@
-This document describes the functions of the active scripts in this project
+This document describes the analytic workflow of the project and narrates the sequence of implementation scripts.
 
 
 
@@ -20,11 +20,11 @@ We devided the workflow into two stages. During the first stage (Chain of Custod
 
 The data set for a  longitudinal study prepared by the respective [ialsa-study-curator][ialsa-study-curator] enters the analytic environment of the    
 [ialsa-2018-amsterdam][ialsa-2018-amsterdam] and meets the      
-- 0.[greeter][greeter] script, which adds custom meta-data and shapes the _data transfer object_ (dto), which tracks all states of the data on its way to the estimated model (hence, "chain of custody" metaphor).    
-- 1.[tuner][tuner] script, which implements project-specific data transformation is then applied to create variables that could by used by the   
-- 2.[encoder][encoder] script to encode the multistate variable, pivotal for the `msm()` estimation call. Then    
-- 3.[validator][validator] script makes sure only valid cases (respondents) are selected  and passes to the    
-- 4.[modeler][modeler] script, which estimates the statistical model according the  [model-specification][model-a-spec] and saves the produced objects to local drive.   
+- (0) [greeter][greeter] script, which adds custom meta-data and shapes the _data transfer object_ (dto), which tracks all states of the data on its way to the estimated model (hence, "chain of custody" metaphor).    
+- (1) [tuner][tuner] script, which implements project-specific data transformation is then applied to create variables that could by used by the   
+- (2) [encoder][encoder] script to encode the multistate variable, pivotal for the `msm()` estimation call. Then    
+- (3) [validator][validator] script makes sure only valid cases (respondents) are selected and passes the data to the    
+- (4) [modeler][modeler] script, which estimates the statistical model according the  [model-specification][model-a-spec] and saves generated objects to local drive.   
 
 
 ## Model evaluation
