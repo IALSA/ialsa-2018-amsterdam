@@ -1,5 +1,5 @@
 ---
-title: "Review variables: MAP"
+title: "Review: MAP"
 output:
   html_document:
     css: ~/GitHub/ialsa/ialsa-2018-amsterdam/libs/css/sidebar.css
@@ -33,7 +33,7 @@ opts_chunk$set(
   out.width = "960px",
   fig.path = 'figure_rmd/',     
   dev = "png",
-  dpi = 100
+  dpi = 200
   # fig.path = 'figure_pdf/',     
   # dev = "pdf"#,
   # dev.args=list(pdf = list(colormodel = 'cmyk'))
@@ -70,7 +70,7 @@ read_chunk("./reports/descriptives/map/review-variables-map.R")
 
 In this report we review the variables in the Memory and Aging Project (MAP) study of RUSH Institute.
 
-# (I) Exposition
+# Exposition
 
 This report is a record of interaction with a data transfer object (dto) produced by sequence of scripts  
 
@@ -83,6 +83,17 @@ Their roles are described in the following chain of custody:
 
 <img src="../../../libs/images/support/chain-of-custody-map.jpg" width="900px" /> 
 
+The data set for a  longitudinal study prepared by the respective [ialsa-study-curator][ialsa-study-curator] enters the analytic environment of the    
+[ialsa-2018-amsterdam][ialsa-2018-amsterdam] and meets the      
+-  [greeter][greeter] script, which adds custom meta-data and shapes the _data transfer object_ (dto), which tracks all states of the data on its way to the estimated model (hence, "chain of custody" metaphor).    
+-  [tuner][tuner] script, which implements project-specific data transformation is then applied to create variables that could by used by the   
+-  [encoder][encoder] script to encode the multistate variable, pivotal for the `msm()` estimation call. Then    
+-  [validator][validator] script makes sure only valid cases (respondents) are selected and passes the data to the    
+-  [modeler][modeler] script, which estimates the statistical model according the  [model-specification][model-a-spec] and saves generated objects to local drive.   
+
+
+
+
 
 ## Overview of objects  
 
@@ -92,25 +103,29 @@ Let us review the data objects in this chain of custody. We will mostly use the 
 ```{r load-data, echo=T, results='show', message=FALSE}
 ```
 
-## Meta
+## Metadata
 
-The `dto` contains the meta data set, descrdibing the existing variables. This spreadsheet is the means by which variables are studied, classified, described, and annotated.  The process of applying this meta data file to alter the `raw` form is described in the `./manipulation/map/0-greeter-map.R` script.
+The `dto` contains the meta data set, descrdibing the existing variables. This spreadsheet is the means by which variables are studied, classified, renamed, described, and annotated.  The process of applying this meta data file to alter the `raw` form is described in the `./manipulation/map/0-greeter-map.R` script.
 
 ```{r meta-table, echo=FALSE, results='show', message=FALSE}
 ```
 
 ## How to interact
 
-Now that the full chain of custody is loaded into our analytic environment, we can demonstrate some of the ways we can interact with `dto` to set the stage for data visualization to follow. 
+Now that the full chain of custody (up until estimation) is loaded into our analytic environment, we can demonstrate some of the ways we can interact with `dto` to set the stage for data visualization to follow. 
 <!-- Inspect the datasets.   -->
 ```{r inspect-data-1, echo=T, results='show', message=FALSE, eval=F}
 ```
 
-## A few basic Qs
+## Valid vs Estimated
 
 > What is the difference between `dto$valid` and `ds_estimation`? 
 
-If all elibible cases (from perspective of data cleanliness) are employed during estimation, these two data sets should have the same cases.
+If all eligible cases (from perspective of data cleanliness) are employed during estimation, these two data sets should contain identical set of cases (repsondents). 
+
+> Why do we want to differentiate between `dto$valid` and `ds_estimation`?
+
+During the search for the final model to be reported, we may want to compare various nuanced subsamples (e.g. dropping those with intermidiate missing state) and subcohorts (e.g. gender and race). To have this flexibity in the workflow, yet capture this nuance in the documentation `dto$valid` and `ds_estimation`
 
 ```{r inspect-data-2, echo=T, results='show', message=FALSE}
 ```
@@ -134,41 +149,108 @@ Now that the `valid` data set is loaded up into our environment and we understan
 ```{r basic-graph, echo=TRUE, results='show', message=FALSE}
 ```
 
-# (II) - Development
 
 # Age
 
+## Intervals
+```{r age-0-intervals, echo=TRUE, results='show', message=FALSE, eval=T}
+```
+
+## Age at Baseline
 ```{r age-1, echo=TRUE, results='show', message=FALSE, eval=T}
 ```
 
-
-# Education
-```{r B-4-education, echo=TRUE, results='show', message=FALSE, eval=T}
+## Year of Birth
+```{r age-2, echo=TRUE, results='show', message=FALSE, eval=T}
 ```
 
-# BMI
-```{r B-6-bmi, echo=TRUE, results='show', message=FALSE, eval=T}
+## Age at Death
+```{r age-3, echo=TRUE, results='show', message=FALSE, eval=T}
 ```
 
-# Cognition
-
-Let us review variables related to cognitive health.
-
-## Global cognition
-```{r B-2-cognitive-5-cogn_global, echo=TRUE, results='show', message=FALSE, eval=T}
+## Death indicator
+```{r age-4, echo=TRUE, results='show', message=FALSE, eval=T}
 ```
 
-## Dementia
-```{r B-3-dementia-diagnosis, echo=TRUE, results='show', message=FALSE, eval=T}
+
+# Covariates
+
+## Education
+```{r edu-1, echo=TRUE, results='show', message=FALSE, eval=T}
 ```
 
-## MMSE
-```{r B-2-cognitive-5-mmse, echo=TRUE, results='show', message=FALSE, eval=T}
+## Height
+```{r height-1, echo=TRUE, results='show', message=FALSE, eval=T}
 ```
 
-# Gait
+```{r height-2, echo=TRUE, results='show', message=FALSE, eval=T}
+```
+
+
+## BMI
+```{r bmi-1, echo=TRUE, results='show', message=FALSE, eval=T}
+```
+
+
+# Physical measures
+
+## Gait
 ```{r gait-1, echo=TRUE, results='show', message=FALSE, eval=T}
 ```
 
+```{r gait-2, echo=TRUE, results='show', message=FALSE, eval=T}
+```
 
-# (III) - Recapitulation
+```{r gait-3, echo=TRUE, results='show', message=FALSE, eval=T}
+```
+
+## Grip
+```{r grip-1, echo=TRUE, results='show', message=FALSE, eval=T}
+```
+
+```{r grip-2, echo=TRUE, results='show', message=FALSE, eval=T}
+```
+
+```{r grip-3, echo=TRUE, results='show', message=FALSE, eval=T}
+```
+
+
+
+# Cognitive measures
+
+## MMSE
+```{r mmse-1, echo=TRUE, results='show', message=FALSE, eval=T}
+```
+
+```{r mmse-2, echo=TRUE, results='show', message=FALSE, eval=T}
+```
+
+```{r mmse-3, echo=TRUE, results='show', message=FALSE, eval=T}
+```
+
+## Global cognition
+```{r cognition-global-1, echo=TRUE, results='show', message=FALSE, eval=T}
+```
+
+```{r cognition-global-2, echo=TRUE, results='show', message=FALSE, eval=T}
+```
+
+```{r cognition-global-3, echo=TRUE, results='show', message=FALSE, eval=T}
+```
+
+## Dementia
+```{r dementia-1, echo=TRUE, results='show', message=FALSE, eval=T}
+```
+
+
+
+<!--- place hyperlinks here -->
+[greeter]:https://github.com/IALSA/ialsa-2018-amsterdam/blob/master/manipulation/map/0-greeter-map.R
+[tuner]:https://github.com/IALSA/ialsa-2018-amsterdam/blob/master/manipulation/map/1-tuner-map.R
+[encoder]:https://github.com/IALSA/ialsa-2018-amsterdam/blob/master/manipulation/map/2-encoder-map.R
+[validator]:https://github.com/IALSA/ialsa-2018-amsterdam/blob/master/manipulation/map/3-validator-map.R
+[modeler]:https://github.com/IALSA/ialsa-2018-amsterdam/blob/master/manipulation/map/4-modeler-map.R
+
+[model-a-spec]:https://github.com/IALSA/ialsa-2018-amsterdam/blob/master/libs/images/support/model-a-specification.jpg
+[ialsa-study-curator]:https://github.com/IALSA/ialsa-study-curator/blob/master/README.md
+[ialsa-2018-amsterdam]:https://github.com/IALSA/ialsa-2018-amsterdam/blob/master/README.md

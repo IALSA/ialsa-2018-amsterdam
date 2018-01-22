@@ -46,7 +46,7 @@ names(dto$encoded) # is a list consisting of three data frames representing enco
 ds <- dto$encoded$corrected
 ds <- dto$encoded$corrected
 ds <- dto$encoded$multistate
-ds %>% glimpse()
+ds %>% dplyr::glimpse()
 
 
 # ---- inspect-data -------------------------------------------------------------

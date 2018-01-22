@@ -140,9 +140,15 @@ ds_estimation <- ds_valid %>%
     ,birth_year    # year of birth         
     ,male          # sex
     ,edu           # years of education
-    ,htm_med         # height in meters, median across observed across lifespan
-    ,bmi_med         # Body Mass Index, median across observed across lifespan
+    ,htm_med       # height in meters, median across observed across lifespan
+    ,bmi_med       # Body Mass Index, median across observed across lifespan
+    # ,physact_med   # Physical activity, median across observed across lifespan
+    ,htm_bl        # height in meters, baseline measure
+    ,bmi_bl        # Body Mass Index, baseline measure
+    # ,physact_bl    # Physical activity, baseline measure
     ,gait          # gait speed
+    ,gait_bl
+    ,gait_med
     # ,cogact_old    # cognitive activity
     # ,soc_net       # size of social network
     ,fu_year       # follow-up year       

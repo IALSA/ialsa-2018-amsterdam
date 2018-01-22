@@ -58,7 +58,7 @@ ds <- ds %>%
 # ---- force-to-static-height ---------------------------
 ds %>% view_temporal_pattern("htm", 2) # with seed
 ds %>% temporal_pattern("htm") # random every time
-ds %>% over_waves("htm"); # 2, 4, 6
+ds %>% dplyr::mutate(htm = round(htm,1)) %>%  over_waves("htm"); # 2, 4, 6
 # check that values are the same across waves
 ds %>%
   dplyr::group_by(id) %>%
@@ -74,13 +74,20 @@ ds <- ds %>%
   ) %>%
   dplyr::ungroup()
 # examine the difference
-ds %>% view_temporal_pattern("htm_med", 2)
-ds %>% view_temporal_pattern("htm", 2)
+ds %>% view_temporal_pattern("htm",     4)
+ds %>% view_temporal_pattern("htm_bl",  4)
+ds %>% view_temporal_pattern("htm_med", 4)
+ds %>% dplyr::mutate(htm     = round(htm,1))     %>% over_waves("htm"); 
+ds %>% dplyr::mutate(htm_bl  = round(htm_bl,1))  %>% over_waves("htm_bl");
+ds %>% dplyr::mutate(htm_med = round(htm_med,1)) %>% over_waves("htm_med"); 
+
 
 # ---- force-to-static-bmi ---------------------------
 ds %>% view_temporal_pattern("bmi", 2) # with seed
 ds %>% temporal_pattern("bmi") # random every time
-ds %>% over_waves("bmi"); # 2, 4, 6
+ds %>% 
+  dplyr::mutate(bmi = round(bmi,0)) %>% 
+  over_waves("bmi"); # 2, 4, 6
 # check that values are the same across waves
 ds %>%
   dplyr::group_by(id) %>%
@@ -96,13 +103,18 @@ ds <- ds %>%
   ) %>%
   dplyr::ungroup()
 # examine the difference
-ds %>% view_temporal_pattern("bmi_med", 2)
-ds %>% view_temporal_pattern("bmi", 2)
+id <- 4
+ds %>% view_temporal_pattern("bmi",     id)
+ds %>% view_temporal_pattern("bmi_bl",  id)
+ds %>% view_temporal_pattern("bmi_med", id)
+ds %>% dplyr::mutate(bmi     = round(bmi,0))     %>% over_waves("bmi"); 
+ds %>% dplyr::mutate(bmi_bl  = round(bmi_bl,0))  %>% over_waves("bmi_bl");
+ds %>% dplyr::mutate(bmi_med = round(bmi_med,0)) %>% over_waves("bmi_med"); 
 
 # ---- force-to-static-gait ---------------------------
 ds %>% view_temporal_pattern("gait", 2) # with seed
 ds %>% temporal_pattern("gait") # random every time
-ds %>% over_waves("gait"); # 2, 4, 6
+ds %>% dplyr::mutate(gait= round(gait,1)) %>% over_waves("gait"); # 2, 4, 6
 # check that values are the same across waves
 ds %>%
   dplyr::group_by(id) %>%
@@ -118,15 +130,20 @@ ds <- ds %>%
   ) %>%
   dplyr::ungroup()
 # examine the difference
-ds %>% view_temporal_pattern("gait_med", 2)
-ds %>% view_temporal_pattern("gait", 2)
+id <- 4
+ds %>% view_temporal_pattern("gait",     id)
+ds %>% view_temporal_pattern("gait_bl",  id)
+ds %>% view_temporal_pattern("gait_med", id)
+ds %>% dplyr::mutate(gait     = round(gait,1))     %>% over_waves("gait"); 
+ds %>% dplyr::mutate(gait_bl  = round(gait_bl,1))  %>% over_waves("gait_bl");
+ds %>% dplyr::mutate(gait_med = round(gait_med,1)) %>% over_waves("gait_med"); 
 
 
 
 # ---- force-to-static-grip ---------------------------
 ds %>% view_temporal_pattern("grip", 2) # with seed
 ds %>% temporal_pattern("grip") # random every time
-ds %>% over_waves("grip"); # 2, 4, 6
+ds %>% dplyr::mutate(grip = round(grip/10,0)) %>% over_waves("grip"); # 2, 4, 6
 # check that values are the same across waves
 ds %>%
   dplyr::group_by(id) %>%
@@ -142,13 +159,19 @@ ds <- ds %>%
   ) %>%
   dplyr::ungroup()
 # examine the difference
-ds %>% view_temporal_pattern("grip_med", 2)
-ds %>% view_temporal_pattern("grip", 2)
+id <- 4
+ds %>% view_temporal_pattern("grip",     id)
+ds %>% view_temporal_pattern("grip_bl",  id)
+ds %>% view_temporal_pattern("grip_med", id)
+ds %>% dplyr::mutate(grip     = round(grip,0))     %>% over_waves("grip"); 
+ds %>% dplyr::mutate(grip_bl  = round(grip_bl,0))  %>% over_waves("grip_bl");
+ds %>% dplyr::mutate(grip_med = round(grip_med,0)) %>% over_waves("grip_med"); 
+
 
 # ---- force-to-static-physact ---------------------------
 ds %>% view_temporal_pattern("physact", 2) # with seed
 ds %>% temporal_pattern("physact") # random every time
-ds %>% over_waves("physact"); # 2, 4, 6
+ds %>% dplyr::mutate(physact= round(physact,0)) %>% over_waves("physact"); # 2, 4, 6
 # check that values are the same across waves
 ds %>%
   dplyr::group_by(id) %>%
@@ -164,8 +187,13 @@ ds <- ds %>%
   ) %>%
   dplyr::ungroup()
 # examine the difference
-ds %>% view_temporal_pattern("physact_med", 2)
-ds %>% view_temporal_pattern("physact", 2)
+id <- 4
+ds %>% view_temporal_pattern("physact",     id)
+ds %>% view_temporal_pattern("physact_bl",  id)
+ds %>% view_temporal_pattern("physact_med", id)
+ds %>% dplyr::mutate(physact     = round(physact,0))     %>% over_waves("physact"); 
+ds %>% dplyr::mutate(physact_bl  = round(physact_bl,0))  %>% over_waves("physact_bl");
+ds %>% dplyr::mutate(physact_med = round(physact_med,0)) %>% over_waves("physact_med"); 
 
 
 # ---- describe-before-encoding --------------------------------------------------------------
@@ -188,13 +216,22 @@ ds_long <- ds %>%
     "id"             # personal identifier
     ,"male"          # gender
     ,"edu"           # years of education
-    ,"htm_med"       # height in meters, median across observed across lifespan
-    ,"bmi_med"       # Body Mass Index, median across observed across lifespan
-    ,"physact_med"   # Physical activity, median across observed across lifespan
     ,"birth_year"    # year of birth 
     ,"died"          # death indicator
     ,"age_at_death"  # age at death
     ,"age_at_bl"     # age at baseline
+    # Temporally flattened meausures: median across observed lifespan
+    ,"htm_med"       # height in meters
+    ,"bmi_med"       # Body Mass Index
+    ,"physact_med"   # Physical activity
+    ,"gait_med"      # Gait Speed in minutes per second (min/sec)
+    ,"grip_med"      # Extremity strength in pounds (lbs)
+    # Temporally flattened meausures: at baseline
+    ,"htm_bl"        # height in meters
+    ,"bmi_bl"        # Body Mass Index
+    ,"physact_bl"    # Physical activity
+    ,"gait_bl"       # Gait Speed in minutes per second (min/sec)
+    ,"grip_bl"       # Extremity strength in pounds (lbs)
     # time-invariant above
     ,"wave"          # Follow-up year --- --- --- --- --- --- --- --- --- ---
     ,"fu_year"       # Follow-up year --- --- --- --- --- --- --- --- --- ---
